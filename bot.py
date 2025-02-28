@@ -6,20 +6,17 @@ import requests
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.filters import Command
+from dotenv import load_dotenv
+
+# Загружаем переменные из .env
+load_dotenv()
 
 # Включаем логирование
 logging.basicConfig(level=logging.INFO)
 
-# Дополнительное логирование сообщений пользователей в отдельный файл
-user_logger = logging.getLogger("user_messages")
-user_logger.setLevel(logging.INFO)
-user_handler = logging.FileHandler("user_messages.log", encoding="utf-8")
-user_handler.setFormatter(logging.Formatter("%(asctime)s - [%(user_id)s] %(username)s: %(message)s"))
-user_logger.addHandler(user_handler)
-
-# Токены
-TELEGRAM_BOT_TOKEN = "7756038660:AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo"
-CRYPTOBOT_API_KEY = "347583:AAr39UUQRuaxRGshwKo0zFHQnK5n3KMWkzr"
+# Токены (загружаются из .env)
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CRYPTOBOT_API_KEY = os.getenv("CRYPTOBOT_API_KEY")
 
 # Создаём бота и диспетчер
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
@@ -49,7 +46,8 @@ def main_menu():
         [InlineKeyboardButton(text="🤖 Создать бота", callback_data="create_bot")],
         [InlineKeyboardButton(text="ℹ️ Информация", callback_data="info")],
         [InlineKeyboardButton(text="💬 Отзывы", url="https://t.me/nwfOL9BBC0J1Y2Q")],
-        [InlineKeyboardButton(text="👤 Профиль", callback_data="profile")]
+        [InlineKeyboardButton(text="👤 Профиль", callback_data="profile")],
+        [InlineKeyboardButton(text="🔒 Политика конфиденциальности", callback_data="privacy")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -57,7 +55,7 @@ def main_menu():
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
     user_id = str(message.from_user.id)
-    
+
     if user_id not in users:
         users[user_id] = {"balance": 0, "username": message.from_user.username}
         with open(USERS_FILE, "w", encoding="utf-8") as f:
@@ -125,20 +123,32 @@ async def info_handler(callback_query: types.CallbackQuery):
 
     await callback_query.message.answer(info_text, parse_mode="Markdown")
 
-# Логирование сообщений только у пользователей, которые оплатили
-@dp.message()
-async def log_user_messages(message: types.Message):
-    user_id = str(message.from_user.id)
-    username = message.from_user.username or "Без имени"
-    
-    # Проверяем, оплатил ли пользователь
-    if users.get(user_id, {}).get("balance", 0) > 0:
-        log_data = {
-            "user_id": user_id,
-            "username": username,
-            "message": message.text
-        }
-        user_logger.info(log_data)
+# Политика конфиденциальности
+@dp.callback_query(lambda c: c.data == "privacy")
+async def privacy_handler(callback_query: types.CallbackQuery):
+    privacy_text = (
+        "🔒 **Политика конфиденциальности**\n\n"
+        "1️⃣ Ваши данные (имя, ID) хранятся в зашифрованном виде.\n"
+        "2️⃣ Мы не передаём информацию третьим лицам.\n"
+        "3️⃣ Все платежи через CryptoBot безопасны.\n"
+        "4️⃣ Вы можете удалить свой аккаунт в любое время.\n"
+    )
+
+    await callback_query.message.answer(privacy_text, parse_mode="Markdown")
+
+# Пополнение баланса
+@dp.callback_query(lambda c: c.data == "topup")
+async def topup_handler(callback_query: types.CallbackQuery):
+    topup_text = (
+        "💰 **Как пополнить баланс в боте?**\n\n"
+        "1️⃣ Откройте [CryptoBot](https://t.me/CryptoBot) и нажмите «Пополнить».\n"
+        "2️⃣ Выберите USDT (TRC20) и скопируйте адрес.\n"
+        "3️⃣ Отправьте USDT на этот адрес.\n"
+        "4️⃣ После подтверждения транзакции баланс появится в CryptoBot.\n\n"
+        "📌 После этого вы сможете оплатить услуги в боте!"
+    )
+
+    await callback_query.message.answer(topup_text, parse_mode="Markdown")
 
 # Запуск бота
 async def main():
