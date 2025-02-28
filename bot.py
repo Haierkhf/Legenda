@@ -14,9 +14,9 @@ load_dotenv()
 # Включаем логирование
 logging.basicConfig(level=logging.INFO)
 
-# Токены (загружаются из .env)
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-CRYPTOBOT_API_KEY = os.getenv("CRYPTOBOT_API_KEY")
+# Токены 
+TELEGRAM_BOT_TOKEN = "7756038660:AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo"
+CRYPTOBOT_API_KEY = "347583:AAr39UUQRuaxRGshwKo0zFHQnK5n3KMWkzr"
 
 # Создаём бота и диспетчер
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
