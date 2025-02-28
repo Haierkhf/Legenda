@@ -211,9 +211,8 @@ async def cryptobot_webhook(request: Request):
             # Отправляем пользователю сообщение
             await bot.send_message(user_id, f"✅ Оплата {data['amount']} USDT получена! Ваш баланс пополнен.")
 
-    return {"status": "ok"}
+    async def main():
+    await dp.start_polling()
+
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-if __name__ == "__main__":
-    executor.start_polling(dp, skip_updates=True)
+    asyncio.run(main())
