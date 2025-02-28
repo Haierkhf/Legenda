@@ -103,8 +103,9 @@ async def profile_handler(callback_query: types.CallbackQuery):
         f"**Ваш профиль**\n\n"
         f"👤 Пользователь: {callback_query.from_user.username or 'Без имени'}\n"
         f"💰 Баланс: {balance} USDT\n"
-        f"🔗 Ваша реферальная ссылка: [Нажмите здесь](https://t.me/{bot.username}?start={user_id})"
+        me = await bot.get_me()
     )
+f"🔗 Ваша реферальная ссылка: [Нажмите здесь](https://t.me/{me.username}?start={user_id})"
 
     await callback_query.message.answer(profile_text, parse_mode="Markdown")
 
