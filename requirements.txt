@@ -3,3 +3,9 @@ python-dotenv
 requests
 fastapi==0.95.1
 uvicorn==0.22.0
+aiohttp
+aiohttp[speedups]
+pip
+setuptools
+wheel
+aiohttp
