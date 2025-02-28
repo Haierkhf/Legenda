@@ -101,28 +101,52 @@ async def profile_handler(callback_query: types.CallbackQuery):
 
     await callback_query.message.answer(profile_text, parse_mode="Markdown")
 
-# Оплата через CryptoBot
-@dp.callback_query(lambda c: c.data.startswith("pay_"))
+import requests
+from aiogram import types
+
+# Словарь для хранения ожидаемых платежей
+pending_payments = {}
+
+# Обработчик платежей через CryptoBot
+@dp.callback_query(lambda c: c.data and c.data.startswith("pay_"))
 async def pay_handler(callback_query: types.CallbackQuery):
     user_id = str(callback_query.from_user.id)
     amount_usd = 22.80  # Цена услуги
 
-    response = requests.post(
-        "https://pay.crypt.bot/api/createInvoice",
-        json={"asset": "USDT", "currency": "USD", "amount": amount_usd, "description": "Оплата бота"},
-        headers={"Crypto-Pay-API-Token": CRYPTOBOT_API_KEY}
-    )
-
-    if response.ok:
-        pay_url = response.json()["result"]["pay_url"]
-        invoice_id = response.json()["result"]["invoice_id"]
-        pending_payments[user_id] = invoice_id
-
-        await callback_query.message.answer(
-    f"Оплатите {amount_usd} USDT, чтобы создать бота.\n[Перейти к оплате]({pay_url})"
+    try:
+        response = requests.post(
+            "https://pay.crypt.bot/api/createInvoice",
+            json={
+                "asset": "USDT",
+                "currency": "USD",
+                "amount": amount_usd
+            },
+            headers={"Crypto-Pay-API-Token": CRYPTOBOT_API_KEY},
         )
-        
-            parse_mode="Markdown"
+
+        if response.ok:
+            data = response.json()
+            if "result" in data:
+                pay_url = data["result"]["pay_url"]
+                invoice_id = data["result"]["invoice_id"]
+                
+                # Сохраняем ID платежа
+                pending_payments[user_id] = invoice_id
+
+                # Отправляем пользователю ссылку на оплату
+                await callback_query.message.answer(
+                    f"💰 Оплатите {amount_usd} USDT, чтобы создать бота.\n"
+                    f"[🔗 Перейти к оплате]({pay_url})",
+                    parse_mode="Markdown",
+                )
+            else:
+                await callback_query.message.answer("⚠ Ошибка создания счета. Попробуйте позже.")
+        else:
+            await callback_query.message.answer("⚠ Ошибка связи с платежной системой. Попробуйте позже.")
+
+    except Exception as e:
+        await callback_query.message.answer("❌ Ошибка при обработке платежа.")
+        print(f"Ошибка при создании счета: {e}")
 # Кнопка "Информация"
 @dp.callback_query(lambda c: c.data == "info")
 async def info_handler(callback_query: types.CallbackQuery):
