@@ -118,7 +118,7 @@ async def pay_handler(callback_query: types.CallbackQuery):
         invoice_id = response.json()["result"]["invoice_id"]
         pending_payments[user_id] = invoice_id
 
-        await callback_query.message.answer(
+        await callback_query.message.answer("Текст сообщения", reply_markup=keyboard)
             f"Оплатите {amount_usd} USDT, чтобы создать бота.\n[Перейти к оплате]({pay_url})",
             parse_mode="Markdown"
 # Кнопка "Информация"
