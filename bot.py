@@ -145,8 +145,8 @@ async def cryptobot_webhook(request: Request):
     user_id = None
     for uid, inv_id in pending_payments.items():
         if inv_id == invoice_id:
-            user_id = uid
-            break
+        user_id = uid
+        break
 
     if user_id:
         # Добавляем сумму к балансу
