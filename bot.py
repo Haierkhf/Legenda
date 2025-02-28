@@ -4,9 +4,10 @@ import json
 import asyncio
 import requests
 from fastapi import FastAPI, Request
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher, types, F
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from aiogram.filters.command import Command
+from aiogram.filters import Command
+from aiogram.fsm.storage.memory import MemoryStorage
 from dotenv import load_dotenv
 
 # Загружаем переменные из .env
@@ -16,12 +17,12 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 
 # Токены
-TELEGRAM_BOT_TOKEN = "7756038660:AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo"
-CRYPTOBOT_API_KEY = "347583:AAr39UUQRuaxRGshwKo0zFHQnK5n3KMWkzr"
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CRYPTOBOT_API_KEY = os.getenv("CRYPTOBOT_API_KEY")
 
 # Создаём бота и диспетчер
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
-dp = Dispatcher()
+dp = Dispatcher(storage=MemoryStorage())
 app = FastAPI()
 
 # Файл пользователей
@@ -41,7 +42,6 @@ except json.JSONDecodeError:
 
 # Временное хранилище платежей
 pending_payments = {}
-
 # Главное меню
 def main_menu():
     buttons = [
@@ -52,7 +52,8 @@ def main_menu():
         [InlineKeyboardButton(text="🔒 Политика конфиденциальности", callback_data="privacy")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
-    # Команда /start
+
+# Команда /start
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
     user_id = str(message.from_user.id)
@@ -63,8 +64,7 @@ async def start_handler(message: types.Message):
             json.dump(users, f, indent=4)
 
     await message.answer("Привет! Я бот. Выбери действие:", reply_markup=main_menu())
-
-# Подменю "Создать бота"
+    # Подменю "Создать бота"
 def create_bot_menu():
     buttons = [
         [InlineKeyboardButton(text="📢 Автопостинг", callback_data="create_autoposting_bot")],
@@ -79,7 +79,8 @@ def create_bot_menu():
         [InlineKeyboardButton(text="🔙 Назад", callback_data="main_menu")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
-# Кнопка "Профиль"
+
+# Обработчик кнопки "Профиль"
 @dp.callback_query(lambda c: c.data == "profile")
 async def profile_handler(callback_query: types.CallbackQuery):
     user_id = str(callback_query.from_user.id)
@@ -90,7 +91,6 @@ async def profile_handler(callback_query: types.CallbackQuery):
             json.dump(users, f, indent=4)
 
     balance = users[user_id]["balance"]
-
     me = await bot.get_me()
     referral_link = f"https://t.me/{me.username}?start={user_id}"
 
@@ -102,14 +102,7 @@ async def profile_handler(callback_query: types.CallbackQuery):
     )
 
     await callback_query.message.answer(profile_text, parse_mode="Markdown")
-
-import requests
-from aiogram import types
-
-# Словарь для хранения ожидаемых платежей
-pending_payments = {}
-
-# Обработчик платежей через CryptoBot
+    # Обработчик платежей через CryptoBot
 @dp.callback_query(lambda c: c.data and c.data.startswith("pay_"))
 async def pay_handler(callback_query: types.CallbackQuery):
     user_id = str(callback_query.from_user.id)
@@ -148,8 +141,34 @@ async def pay_handler(callback_query: types.CallbackQuery):
 
     except Exception as e:
         await callback_query.message.answer("❌ Ошибка при обработке платежа.")
-        print(f"Ошибка при создании счета: {e}")
-# Кнопка "Информация"
+        logging.error(f"Ошибка при создании счета: {e}")
+        @app.post("/cryptobot_webhook")
+async def cryptobot_webhook(request: Request):
+    data = await request.json()
+    logging.info(f"Webhook received: {data}")  # Логируем данные для отладки
+
+    if "invoice_id" in data and "status" in data and data["status"] == "paid":
+        invoice_id = data["invoice_id"]
+
+        # Найти пользователя, оплатившего инвойс
+        user_id = None
+        for uid, inv_id in pending_payments.items():
+            if inv_id == invoice_id:
+                user_id = uid
+                break
+
+        if user_id:
+            # Добавляем сумму к балансу
+            users[user_id]["balance"] += float(data["amount"])  # Приведение к float
+            with open(USERS_FILE, "w", encoding="utf-8") as f:
+                json.dump(users, f, indent=4)
+
+            # Удаляем инвойс из списка ожидания
+            del pending_payments[user_id]
+
+            # Отправляем пользователю сообщение
+            await bot.send_message(user_id, f"✅ Оплата {data['amount']} USDT получена! Ваш баланс пополнен.")
+            # Кнопка "Информация"
 @dp.callback_query(lambda c: c.data == "info")
 async def info_handler(callback_query: types.CallbackQuery):
     info_text = (
@@ -165,7 +184,7 @@ async def info_handler(callback_query: types.CallbackQuery):
 
     await callback_query.message.answer(info_text, parse_mode="Markdown")
 
-# Политика конфиденциальности
+# Кнопка "Политика конфиденциальности"
 @dp.callback_query(lambda c: c.data == "privacy")
 async def privacy_handler(callback_query: types.CallbackQuery):
     privacy_text = (
@@ -177,42 +196,10 @@ async def privacy_handler(callback_query: types.CallbackQuery):
     )
 
     await callback_query.message.answer(privacy_text, parse_mode="Markdown")
-
-# Запуск бота
+    # Запуск бота
 async def main():
+    logging.info("Запуск бота...")
     await dp.start_polling(bot)
-
-if __name__ == "__main__":
-    asyncio.run(main())
-@app.post("/cryptobot_webhook")
-async def cryptobot_webhook(request: Request):
-    data = await request.json()
-    print("Webhook received:", data)  # Логируем данные для отладки
-
-    if "invoice_id" in data and "status" in data and data["status"] == "paid":
-        invoice_id = data["invoice_id"]
-
-        # Найти пользователя, оплатившего инвойс
-        user_id = None
-        for uid, inv_id in pending_payments.items():
-            if inv_id == invoice_id:
-                user_id = uid
-                break
-
-        if user_id:
-            # Добавляем сумму к балансу
-            users[user_id]["balance"] += data["amount"]
-            with open(USERS_FILE, "w", encoding="utf-8") as f:
-                json.dump(users, f, indent=4)
-
-            # Удаляем инвойс из списка ожидания
-            del pending_payments[user_id]
-
-            # Отправляем пользователю сообщение
-            await bot.send_message(user_id, f"✅ Оплата {data['amount']} USDT получена! Ваш баланс пополнен.")
-
-    async def main():
-    await dp.start_polling()
 
 if __name__ == "__main__":
     asyncio.run(main())
