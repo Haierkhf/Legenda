@@ -129,9 +129,9 @@ async def pay_handler(callback_query: types.CallbackQuery):
                 pending_payments[user_id] = invoice_id
 
                 # Отправляем пользователю ссылку на оплату
-     except Exception as e:
-        await callback_query.message.answer("Ошибка при обработке платежа.")
-        print(f"Ошибка при создании счета: {e}")
+   except Exception as e:
+       await callback_query.message.answer("Ошибка при обработке платежа")
+       print(f"Ошибка при создании счета: {e}")
 
 @app.post("/cryptobot_webhook")
 async def cryptobot_webhook(request: Request):
