@@ -3,6 +3,7 @@ import os
 import json
 import asyncio
 import requests
+from fastapi import FastAPI, Request
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.filters import Command
@@ -21,6 +22,7 @@ CRYPTOBOT_API_KEY = "347583:AAr39UUQRuaxRGshwKo0zFHQnK5n3KMWkzr"
 # Создаём бота и диспетчер
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
 dp = Dispatcher()
+app = FastAPI()
 
 # Файл пользователей
 USERS_FILE = "users.json"
@@ -182,3 +184,31 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+@app.post("/cryptobot_webhook")
+async def cryptobot_webhook(request: Request):
+    data = await request.json()
+    print("Webhook received:", data)  # Логируем данные для отладки
+
+    if "invoice_id" in data and "status" in data and data["status"] == "paid":
+        invoice_id = data["invoice_id"]
+
+        # Найти пользователя, оплатившего инвойс
+        user_id = None
+        for uid, inv_id in pending_payments.items():
+            if inv_id == invoice_id:
+                user_id = uid
+                break
+
+        if user_id:
+            # Добавляем сумму к балансу
+            users[user_id]["balance"] += data["amount"]
+            with open(USERS_FILE, "w", encoding="utf-8") as f:
+                json.dump(users, f, indent=4)
+
+            # Удаляем инвойс из списка ожидания
+            del pending_payments[user_id]
+
+            # Отправляем пользователю сообщение
+            await bot.send_message(user_id, f"✅ Оплата {data['amount']} USDT получена! Ваш баланс пополнен.")
+
+    return {"status": "ok"}
