@@ -143,7 +143,7 @@ async def pay_handler(callback_query: types.CallbackQuery):
         await callback_query.message.answer("❌ Ошибка при обработке платежа.")
         logging.error(f"Ошибка при создании счета: {e}")
         @app.post("/cryptobot_webhook")
-async def cryptobot_webhook(request: Request):
+    async def cryptobot_webhook(request: Request):
     data = await request.json()
     logging.info(f"Webhook received: {data}")  # Логируем данные для отладки
 
