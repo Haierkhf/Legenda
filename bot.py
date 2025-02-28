@@ -3,7 +3,7 @@ import os
 import json
 import asyncio
 import requests
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher, types, F
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.filters import Command
 from dotenv import load_dotenv
@@ -14,9 +14,13 @@ load_dotenv()
 # Включаем логирование
 logging.basicConfig(level=logging.INFO)
 
-# Токены 
-TELEGRAM_BOT_TOKEN = "7756038660:AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo"
-CRYPTOBOT_API_KEY = "347583:AAr39UUQRuaxRGshwKo0zFHQnK5n3KMWkzr"
+# Токены
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CRYPTOBOT_API_KEY = os.getenv("CRYPTOBOT_API_KEY")
+
+# Проверка, загружены ли токены
+if not TELEGRAM_BOT_TOKEN or not CRYPTOBOT_API_KEY:
+    raise ValueError("Токены не найдены в .env файле!")
 
 # Создаём бота и диспетчер
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
@@ -64,7 +68,7 @@ async def start_handler(message: types.Message):
     await message.answer("Привет! Я бот. Выбери действие:", reply_markup=main_menu())
 
 # Кнопка "Создать Бота"
-@dp.callback_query(lambda c: c.data == "create_bot")
+@dp.callback_query(F.data == "create_bot")
 async def create_bot(callback_query: types.CallbackQuery):
     user_id = str(callback_query.from_user.id)
     amount_usd = 22.80
@@ -88,7 +92,7 @@ async def create_bot(callback_query: types.CallbackQuery):
         await callback_query.message.answer("Ошибка при создании платежа. Попробуйте позже.")
 
 # Кнопка "Профиль"
-@dp.callback_query(lambda c: c.data == "profile")
+@dp.callback_query(F.data == "profile")
 async def profile_handler(callback_query: types.CallbackQuery):
     user_id = str(callback_query.from_user.id)
 
@@ -110,7 +114,7 @@ async def profile_handler(callback_query: types.CallbackQuery):
     await callback_query.message.answer(profile_text, parse_mode="Markdown")
 
 # Кнопка "Информация"
-@dp.callback_query(lambda c: c.data == "info")
+@dp.callback_query(F.data == "info")
 async def info_handler(callback_query: types.CallbackQuery):
     info_text = (
         "ℹ️ **Информация о боте**\n\n"
@@ -125,7 +129,7 @@ async def info_handler(callback_query: types.CallbackQuery):
     await callback_query.message.answer(info_text, parse_mode="Markdown")
 
 # Политика конфиденциальности
-@dp.callback_query(lambda c: c.data == "privacy")
+@dp.callback_query(F.data == "privacy")
 async def privacy_handler(callback_query: types.CallbackQuery):
     privacy_text = (
         "🔒 **Политика конфиденциальности**\n\n"
@@ -138,7 +142,7 @@ async def privacy_handler(callback_query: types.CallbackQuery):
     await callback_query.message.answer(privacy_text, parse_mode="Markdown")
 
 # Пополнение баланса
-@dp.callback_query(lambda c: c.data == "topup")
+@dp.callback_query(F.data == "topup")
 async def topup_handler(callback_query: types.CallbackQuery):
     topup_text = (
         "💰 **Как пополнить баланс в боте?**\n\n"
