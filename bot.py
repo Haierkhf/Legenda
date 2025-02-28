@@ -15,8 +15,8 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 
 # Токены 
-TELEGRAM_BOT_TOKEN = "7756038660:AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo"
-CRYPTOBOT_API_KEY = "347583:AAr39UUQRuaxRGshwKo0zFHQnK5n3KMWkzr"
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CRYPTOBOT_API_KEY = os.getenv("CRYPTOBOT_API_KEY")
 
 # Создаём бота и диспетчер
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
@@ -98,14 +98,14 @@ async def profile_handler(callback_query: types.CallbackQuery):
             json.dump(users, f, indent=4)
 
     balance = users[user_id]["balance"]
+    me = await bot.get_me()
 
     profile_text = (
         f"**Ваш профиль**\n\n"
         f"👤 Пользователь: {callback_query.from_user.username or 'Без имени'}\n"
         f"💰 Баланс: {balance} USDT\n"
-        me = await bot.get_me()
+        f"🔗 Ваша реферальная ссылка: [Нажмите здесь](https://t.me/{me.username}?start={user_id})"
     )
-f"🔗 Ваша реферальная ссылка: [Нажмите здесь](https://t.me/{me.username}?start={user_id})"
 
     await callback_query.message.answer(profile_text, parse_mode="Markdown")
 
