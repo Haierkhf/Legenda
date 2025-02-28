@@ -3,7 +3,7 @@ import os
 import json
 import asyncio
 import requests
-from aiogram import Bot, Dispatcher, types, F
+from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.filters import Command
 from dotenv import load_dotenv
@@ -17,10 +17,6 @@ logging.basicConfig(level=logging.INFO)
 # Токены
 TELEGRAM_BOT_TOKEN = "7756038660:AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo"
 CRYPTOBOT_API_KEY = "347583:AAr39UUQRuaxRGshwKo0zFHQnK5n3KMWkzr"
-
-# Проверка, загружены ли токены
-if not TELEGRAM_BOT_TOKEN or not CRYPTOBOT_API_KEY:
-    raise ValueError("Токены не найдены в .env файле!")
 
 # Создаём бота и диспетчер
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
@@ -49,13 +45,12 @@ def main_menu():
     buttons = [
         [InlineKeyboardButton(text="🤖 Создать бота", callback_data="create_bot")],
         [InlineKeyboardButton(text="ℹ️ Информация", callback_data="info")],
-        [InlineKeyboardButton(text="💬 Отзывы", url="https://t.me/nwfOL9BBC0J1Y2Q")],
+        [InlineKeyboardButton(text="💬 Отзывы", url="https://t.me/nWf0L9BBCoJlY2Qy")],
         [InlineKeyboardButton(text="👤 Профиль", callback_data="profile")],
         [InlineKeyboardButton(text="🔒 Политика конфиденциальности", callback_data="privacy")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
-
-# Команда /start
+    # Команда /start
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
     user_id = str(message.from_user.id)
@@ -67,11 +62,50 @@ async def start_handler(message: types.Message):
 
     await message.answer("Привет! Я бот. Выбери действие:", reply_markup=main_menu())
 
-# Кнопка "Создать Бота"
-@dp.callback_query(F.data == "create_bot")
-async def create_bot(callback_query: types.CallbackQuery):
+# Подменю "Создать бота"
+def create_bot_menu():
+    buttons = [
+        [InlineKeyboardButton(text="📢 Автопостинг", callback_data="create_autoposting_bot")],
+        [InlineKeyboardButton(text="💳 Продажа цифровых товаров", callback_data="create_digital_goods_bot")],
+        [InlineKeyboardButton(text="📊 Арбитраж криптовалют", callback_data="create_crypto_arbitrage_bot")],
+        [InlineKeyboardButton(text="🖼️ Генерация изображений AI", callback_data="create_ai_image_bot")],
+        [InlineKeyboardButton(text="📝 Генерация PDF-документов", callback_data="create_pdf_bot")],
+        [InlineKeyboardButton(text="🔗 Продажа подписок", callback_data="create_subscriptions_bot")],
+        [InlineKeyboardButton(text="🔍 Поиск airdrop'ов", callback_data="create_airdrop_bot")],
+        [InlineKeyboardButton(text="🔒 Продажа VPN/прокси", callback_data="create_proxy_bot")],
+        [InlineKeyboardButton(text="📅 Бронирование услуг", callback_data="create_booking_bot")],
+        [InlineKeyboardButton(text="🔙 Назад", callback_data="main_menu")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+# Кнопка "Профиль"
+@dp.callback_query(lambda c: c.data == "profile")
+async def profile_handler(callback_query: types.CallbackQuery):
     user_id = str(callback_query.from_user.id)
-    amount_usd = 22.80
+
+    if user_id not in users:
+        users[user_id] = {"balance": 0, "username": callback_query.from_user.username}
+        with open(USERS_FILE, "w", encoding="utf-8") as f:
+            json.dump(users, f, indent=4)
+
+    balance = users[user_id]["balance"]
+
+    me = await bot.get_me()
+    referral_link = f"https://t.me/{me.username}?start={user_id}"
+
+    profile_text = (
+        f"**Ваш профиль**\n\n"
+        f"👤 Пользователь: {callback_query.from_user.username or 'Без имени'}\n"
+        f"💰 Баланс: {balance} USDT\n"
+        f"🔗 Ваша реферальная ссылка: [Нажмите здесь]({referral_link})"
+    )
+
+    await callback_query.message.answer(profile_text, parse_mode="Markdown")
+
+# Оплата через CryptoBot
+@dp.callback_query(lambda c: c.data.startswith("pay_"))
+async def pay_handler(callback_query: types.CallbackQuery):
+    user_id = str(callback_query.from_user.id)
+    amount_usd = 22.80  # Цена услуги
 
     response = requests.post(
         "https://pay.crypt.bot/api/createInvoice",
@@ -87,49 +121,24 @@ async def create_bot(callback_query: types.CallbackQuery):
         await callback_query.message.answer(
             f"Оплатите {amount_usd} USDT, чтобы создать бота.\n[Перейти к оплате]({pay_url})",
             parse_mode="Markdown"
-        )
-    else:
-        await callback_query.message.answer("Ошибка при создании платежа. Попробуйте позже.")
-
-# Кнопка "Профиль"
-@dp.callback_query(F.data == "profile")
-async def profile_handler(callback_query: types.CallbackQuery):
-    user_id = str(callback_query.from_user.id)
-
-    if user_id not in users:
-        users[user_id] = {"balance": 0, "username": callback_query.from_user.username}
-        with open(USERS_FILE, "w", encoding="utf-8") as f:
-            json.dump(users, f, indent=4)
-
-    balance = users[user_id]["balance"]
-    me = await bot.get_me()
-
-    profile_text = (
-        f"**Ваш профиль**\n\n"
-        f"👤 Пользователь: {callback_query.from_user.username or 'Без имени'}\n"
-        f"💰 Баланс: {balance} USDT\n"
-        f"🔗 Ваша реферальная ссылка: [Нажмите здесь](https://t.me/{me.username}?start={user_id})"
-    )
-
-    await callback_query.message.answer(profile_text, parse_mode="Markdown")
-
 # Кнопка "Информация"
-@dp.callback_query(F.data == "info")
+@dp.callback_query(lambda c: c.data == "info")
 async def info_handler(callback_query: types.CallbackQuery):
     info_text = (
         "ℹ️ **Информация о боте**\n\n"
         "Этот бот помогает вам создать собственного Telegram-бота.\n\n"
         "🚀 **Функции:**\n"
-        "🤖 *Создать бота* – запрашивает у вас название и описание бота после оплаты.\n"
+        "🤖 *Создать бота* – выберите шаблон бота и оплатите создание.\n"
         "👤 *Профиль* – показывает ваш баланс и реферальную ссылку.\n"
-        "💰 *Пополнить баланс* – оплатите через CryptoBot.\n\n"
+        "💰 *Пополнить баланс* – оплата через CryptoBot.\n"
+        "💬 *Отзывы* – читайте и оставляйте отзывы.\n\n"
         "📩 Если у вас есть вопросы — пишите в поддержку!"
     )
 
     await callback_query.message.answer(info_text, parse_mode="Markdown")
 
 # Политика конфиденциальности
-@dp.callback_query(F.data == "privacy")
+@dp.callback_query(lambda c: c.data == "privacy")
 async def privacy_handler(callback_query: types.CallbackQuery):
     privacy_text = (
         "🔒 **Политика конфиденциальности**\n\n"
@@ -140,20 +149,6 @@ async def privacy_handler(callback_query: types.CallbackQuery):
     )
 
     await callback_query.message.answer(privacy_text, parse_mode="Markdown")
-
-# Пополнение баланса
-@dp.callback_query(F.data == "topup")
-async def topup_handler(callback_query: types.CallbackQuery):
-    topup_text = (
-        "💰 **Как пополнить баланс в боте?**\n\n"
-        "1️⃣ Откройте [CryptoBot](https://t.me/CryptoBot) и нажмите «Пополнить».\n"
-        "2️⃣ Выберите USDT (TRC20) и скопируйте адрес.\n"
-        "3️⃣ Отправьте USDT на этот адрес.\n"
-        "4️⃣ После подтверждения транзакции баланс появится в CryptoBot.\n\n"
-        "📌 После этого вы сможете оплатить услуги в боте!"
-    )
-
-    await callback_query.message.answer(topup_text, parse_mode="Markdown")
 
 # Запуск бота
 async def main():
