@@ -129,42 +129,35 @@ async def pay_handler(callback_query: types.CallbackQuery):
                 pending_payments[user_id] = invoice_id
 
                 # Отправляем пользователю ссылку на оплату
-                await callback_query.message.answer(
-                    f"💰 Оплатите {amount_usd} USDT, чтобы создать бота.\n"
-                    f"[🔗 Перейти к оплате]({pay_url})",
-                    parse_mode="Markdown",
-                )
-            else:
-                await callback_query.message.answer("⚠ Ошибка создания счета. Попробуйте позже.")
-        else:
-            await callback_query.message.answer("⚠ Ошибка связи с платежной системой. Попробуйте позже.")
-
-    except Exception as e:
+                except Exception as e:
         await callback_query.message.answer("❌ Ошибка при обработке платежа.")
         logging.error(f"Ошибка при создании счета: {e}")
-        @app.post("/cryptobot_webhook")
-    async def cryptobot_webhook(request: Request):
+
+@app.post("/cryptobot_webhook")
+async def cryptobot_webhook(request: Request):
     data = await request.json()
     logging.info(f"Webhook received: {data}")  # Логируем данные для отладки
 
     if "invoice_id" in data and "status" in data and data["status"] == "paid":
-        invoice_id = data["invoice_id"]
+    invoice_id = data["invoice_id"]
 
-        # Найти пользователя, оплатившего инвойс
-        user_id = None
-        for uid, inv_id in pending_payments.items():
-            if inv_id == invoice_id:
-                user_id = uid
-                break
+    # Найти пользователя, оплатившего инвойс
+    user_id = None
+    for uid, inv_id in pending_payments.items():
+        if inv_id == invoice_id:
+            user_id = uid
+            break
 
-        if user_id:
-            # Добавляем сумму к балансу
-            users[user_id]["balance"] += float(data["amount"])  # Приведение к float
-            with open(USERS_FILE, "w", encoding="utf-8") as f:
-                json.dump(users, f, indent=4)
+    if user_id:
+        # Добавляем сумму к балансу
+        users[user_id]["balance"] += float(data["amount"])  # Пример
 
-            # Удаляем инвойс из списка ожидания
-            del pending_payments[user_id]
+        with open(USERS_FILE, "w", encoding="utf-8") as f:
+            json.dump(users, f, indent=4)
+
+        # Удаляем инвойс из списка ожидания
+        del pending_payments[user_id]
+
 
             # Отправляем пользователю сообщение
             await bot.send_message(user_id, f"✅ Оплата {data['amount']} USDT получена! Ваш баланс пополнен.")
