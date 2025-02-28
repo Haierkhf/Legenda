@@ -141,4 +141,8 @@ async def log_user_messages(message: types.Message):
         user_logger.info(log_data)
 
 # Запуск бота
-async def
+async def main():
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    asyncio.run(main())
