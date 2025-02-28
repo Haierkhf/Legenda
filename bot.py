@@ -6,7 +6,7 @@ import requests
 from fastapi import FastAPI, Request
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from aiogram.filters import Command
+from aiogram.filters.command import Command
 from dotenv import load_dotenv
 
 # Загружаем переменные из .env
