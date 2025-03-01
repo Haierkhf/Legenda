@@ -1,10 +1,11 @@
 import logging
 import os
+import telebot
 import json
 import asyncio
 import requests
 from fastapi import FastAPI, Request
-from aiogram import Bot, Dispatcher, types, F
+
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.filters import Command
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -21,8 +22,7 @@ TELEGRAM_BOT_TOKEN = "7756038660:AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo"
 CRYPTOBOT_API_KEY = "347583:AAr39UUQRuaxRGshwKo0zFHQnK5n3KMWkzr"
 
 # Создаём бота и диспетчер
-bot = Bot(token=TELEGRAM_BOT_TOKEN)
-dp = Dispatcher(storage=MemoryStorage())
+bot = telebot.TeleBot('YOUR_API_TOKEN')
 app = FastAPI()
 # Файл пользователей
 USERS_FILE = "users.json"
