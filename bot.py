@@ -3,21 +3,23 @@ import os
 import telebot
 import json
 import requests
-from fastapi import Request
+from fastapi import FastAPI, Request  # Импортируем FastAPI и Request один раз
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 from dotenv import load_dotenv
-from fastapi import Request
+
+# Загружаем переменные окружения из .env файла
+load_dotenv()
 
 # Создаем объект приложения FastAPI
 app = FastAPI()
 
+# Создаем эндпоинт для получения webhook
 @app.post("/cryptobot_webhook")
 async def cryptobot_webhook(request: Request):
     data = await request.json()
     # Логика обработки webhook
-
-# Загружаем переменные из .env
-load_dotenv()
+    print(data)
+    return {"status": "received"}
 
 # Включаем логирование
 logging.basicConfig(level=logging.INFO)
