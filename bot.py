@@ -1,9 +1,9 @@
 import logging
 import os
-import telebot
 import json
 import requests
-from fastapi import FastAPI, Request  # Импортируем FastAPI и Request один раз
+import telebot
+from fastapi import FastAPI, Request
 from dotenv import load_dotenv
 
 # Загружаем переменные окружения из .env файла
@@ -12,28 +12,41 @@ load_dotenv()
 # Включаем логирование
 logging.basicConfig(level=logging.INFO)
 
-import logging
-import requests
-
 # Токены
-TELEGRAM_BOT_TOKEN = "7756038660:AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo"
-CRYPTOBOT_API_KEY = "347583:AA2FTH9et0kfdviBIOv9RfeDPUYq5HAcbRj"
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "замени_на_свой_токен")
+CRYPTOBOT_API_KEY = os.getenv("CRYPTOBOT_API_KEY", "замени_на_свой_ключ")
 CRYPTOBOT_API_URL = "https://pay.crypt.bot/api"  # Правильный API URL
 
-# Проверяем доступность API CryptoBot
+# Проверяем подключение к Telegram Bot API
 try:
-    response = requests.get(f"{CRYPTOBOT_API_URL}/getMe",  
+    bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
+    bot_info = bot.get_me()
+    logging.info(f"Бот успешно подключен: @{bot_info.username}")
+except Exception as e:
+    logging.error(f"Ошибка при подключении к Telegram API: {e}")
+
+# Проверяем подключение к CryptoBot API
+try:
+    response = requests.get(f"{CRYPTOBOT_API_URL}/getMe",
                             headers={"Authorization": f"Bearer {CRYPTOBOT_API_KEY}"})
-    response.raise_for_status()  # Проверяем, нет ли ошибки в ответе
-
+    response.raise_for_status()
     logging.info("API криптобота доступен и запрос успешен.")
-    print(response.json())  # Выводим ответ API для проверки
-
+    print("Ответ от CryptoBot API:", response.json())  # Вывод ответа для проверки
+except requests.exceptions.HTTPError as e:
+    logging.error(f"Ошибка HTTP при подключении к API криптобота: {e}")
+    logging.error(f"Тело ответа: {response.text}")  # Выводит ошибку сервера
 except requests.exceptions.RequestException as e:
     logging.error(f"Ошибка при подключении к API криптобота: {e}")
 
 # Создаём объект FastAPI
 app = FastAPI()
+
+# Webhook для приёма уведомлений от CryptoBot
+@app.post("/cryptobot_webhook")
+async def cryptobot_webhook(request: Request):
+    data = await request.json()
+    logging.info(f"Получены данные от CryptoBot: {data}")
+    return {"status": "received"}
 
 # Создаём бота Telegram
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
