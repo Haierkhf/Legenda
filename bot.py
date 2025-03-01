@@ -178,7 +178,7 @@ async def cryptobot_webhook(request: Request):
 
 
             # Отправляем пользователю сообщение
-            await bot.send_message(user_id, f"✅ Оплата {data['amount']} USDT получена! Ваш баланс пополнен.")
+await bot.send_message(user_id, f"✅ Оплата {data['amount']} USDT получена! Ваш баланс пополнен.")
             # Кнопка "Информация"
 @dp.callback_query(lambda c: c.data == "info")
 async def info_handler(callback_query: types.CallbackQuery):
