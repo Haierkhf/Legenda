@@ -105,6 +105,11 @@ async def profile_handler(callback_query: types.CallbackQuery):
 import requests
 from fastapi import FastAPI, Request
 
+import logging
+import requests
+from fastapi import FastAPI, Request
+from aiogram import Bot, Dispatcher, types
+
 app = FastAPI()
 CRYPTOBOT_API_KEY = "your_api_key_here"
 pending_payments = {}
@@ -135,6 +140,8 @@ async def pay_handler(callback_query: types.CallbackQuery):
                 # Сохраняем ID платежа
                 pending_payments[user_id] = invoice_id
 
+                await callback_query.message.answer(f"Оплатите по ссылке: {pay_url}")
+
     except Exception as e:
         await callback_query.message.answer("Ошибка при обработке платежа.")
         print(f"Ошибка при создании счета: {e}")
@@ -157,6 +164,7 @@ async def cryptobot_webhook(request: Request):
 
         if user_id:
             print(f"Оплата получена от пользователя: {user_id}")
+            # Здесь можно добавить дальнейшую логику обработки успешного платежа
         else:
             print("Платеж получен, но пользователь не найден.")
         # Добавляем сумму к балансу
