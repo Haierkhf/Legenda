@@ -4,33 +4,23 @@ import telebot
 import json
 import requests
 from fastapi import FastAPI, Request  # Импортируем FastAPI и Request один раз
-from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 from dotenv import load_dotenv
 
 # Загружаем переменные окружения из .env файла
 load_dotenv()
 
-# Создаем объект приложения FastAPI
-app = FastAPI()
-
-# Создаем эндпоинт для получения webhook
-@app.post("/cryptobot_webhook")
-async def cryptobot_webhook(request: Request):
-    data = await request.json()
-    # Логика обработки webhook
-    print(data)
-    return {"status": "received"}
-    
 # Включаем логирование
 logging.basicConfig(level=logging.INFO)
 
 # Токены
-TELEGRAM_BOT_TOKEN = "7756038660:AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo"
-CRYPTOBOT_API_KEY = "347583:AAr39UUQRuaxRGshwKo0zFHQnK5n3KMWkzr"
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "your_telegram_bot_token_here")
+CRYPTOBOT_API_KEY = os.getenv("CRYPTOBOT_API_KEY", "your_cryptobot_api_key_here")
 
-# Создаём бота
-bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
+# Создаём объект FastAPI
 app = FastAPI()
+
+# Создаём бота Telegram
+bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 
 # Файл пользователей
 USERS_FILE = "users.json"
@@ -49,6 +39,37 @@ except json.JSONDecodeError:
 
 # Временное хранилище платежей
 pending_payments = {}
+
+# Создаем эндпоинт для получения webhook (для API)
+@app.post("/cryptobot_webhook")
+async def cryptobot_webhook(request: Request):
+    data = await request.json()
+    # Логика обработки webhook
+    print(data)
+    return {"status": "received"}
+
+# Проверка правильности токена бота
+try:
+    bot.get_me()
+    logging.info("Токен правильный, бот успешно подключен.")
+except Exception as e:
+    logging.error(f"Ошибка при подключении: {e}")
+    exit()
+
+# Пример проверки подключения к CryptoBot API
+try:
+    response = requests.get(f"https://api.cryptobot.com/{CRYPTOBOT_API_KEY}")  # Пример URL для CryptoBot
+    if response.status_code == 200:
+        logging.info("Подключение к CryptoBot API успешно.")
+    else:
+        logging.error(f"Ошибка при подключении к CryptoBot API: {response.status_code}")
+except requests.exceptions.RequestException as e:
+    logging.error(f"Ошибка при подключении к CryptoBot API: {e}")
+    exit()
+
+# Запуск бота (если необходимо)
+if __name__ == '__main__':
+    bot.polling(none_stop=True)
 
 # Главное меню
 def main_menu():
