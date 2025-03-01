@@ -68,7 +68,7 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils import executor
 
-API_TOKEN = 'YOUR_BOT_API_TOKEN'  # Замените на ваш токен
+API_TOKEN = '7756038660:AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo'  # Замените на ваш токен
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
@@ -157,7 +157,7 @@ from fastapi import FastAPI, Request
 from aiogram import Bot, Dispatcher, types
 
 app = FastAPI()
-CRYPTOBOT_API_KEY = "your_api_key_here"
+CRYPTOBOT_API_KEY = "347583:AAr39UUQRuaxRGshwKo0zFHQnK5n3KMWkzr"
 pending_payments = {}
 
 # Обработчик платежей через CryptoBot
