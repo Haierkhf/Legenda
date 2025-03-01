@@ -11,8 +11,8 @@ load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 
-TELEGRAM_BOT_TOKEN = os.getenv("AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo")
-CRYPTOBOT_API_KEY = os.getenv("AAr39UUQRuaxRGshwKo0zFHQnK5n3KMWkzr")
+TELEGRAM_BOT_TOKEN = "7756038660:AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo"
+CRYPTOBOT_API_KEY = "347583:AAr39UUQRuaxRGshwKo0zFHQnK5n3KMWkzr"
 
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 
