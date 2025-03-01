@@ -1,0 +1,32 @@
+name: Install dependencies and run bot
+
+on:
+  push:
+    branches:
+      - main  # Запускать workflow при push в main
+  pull_request:
+    branches:
+      - main  # Запускать при pull request'ах в main
+
+jobs:
+  install_and_run:
+    runs-on: ubuntu-latest  # Используем последнюю версию Ubuntu для CI
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2  # Клонируем репозиторий
+
+      - name: Set up Python
+        uses: actions/setup-python@v2  # Настроим Python в нужной версии
+        with:
+          python-version: '3.8'  # Укажите нужную версию Python (например, 3.8)
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip  # Обновляем pip
+          pip install aiogram==2.25  # Устанавливаем нужную версию aiogram
+
+      - name: Run the bot
+        run: python bot.py  # Запускаем вашего бота (или другой основной скрипт)
+        pip install aiogram==2.25
+python bot.py
