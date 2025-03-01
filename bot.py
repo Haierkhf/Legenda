@@ -12,14 +12,23 @@ load_dotenv()
 # Включаем логирование
 logging.basicConfig(level=logging.INFO)
 
+import logging
+import requests
+
 # Токены
 TELEGRAM_BOT_TOKEN = "7756038660:AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo"
 CRYPTOBOT_API_KEY = "347347583583:AAr39UUQRuaxRGshwKo0zFHQnK5n3KMWkzr"
-url = f"https://api.cryptobot.com/{CRYPTOBOT_API_KEY}"
+CRYPTOBOT_API_URL = "https://pay.crypt.bot/api"  # Правильный API URL
+
+# Проверяем доступность API CryptoBot
 try:
-    response = requests.get(f"{CRYPTOBOT_API_URL}/{CRYPTOBOT_API_KEY}")
-    response.raise_for_status()  # Если статус не OK, вызовет исключение
+    response = requests.get(f"{CRYPTOBOT_API_URL}/getMe",  
+                            headers={"Authorization": f"Bearer {CRYPTOBOT_API_KEY}"})
+    response.raise_for_status()  # Проверяем, нет ли ошибки в ответе
+
     logging.info("API криптобота доступен и запрос успешен.")
+    print(response.json())  # Выводим ответ API для проверки
+
 except requests.exceptions.RequestException as e:
     logging.error(f"Ошибка при подключении к API криптобота: {e}")
 
