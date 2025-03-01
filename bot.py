@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 # Токены
 TELEGRAM_BOT_TOKEN = "7756038660:AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo"
 CRYPTOBOT_API_KEY = "347583:AAr39UUQRuaxRGshwKo0zFHQnK5n3KMWkzr"
-CRYPTOBOT_API_URL = "https://api.cryptobot.com"  # Убедитесь, что нет пробела
+CRYPTOBOT_API_URL = "https://api.cryptobot.com"
 
 try:
     response = requests.get(f"{CRYPTOBOT_API_URL}/{CRYPTOBOT_API_KEY}")
