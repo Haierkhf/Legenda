@@ -1,11 +1,9 @@
 import logging
 import os
 import json
-import asyncio
 import requests
-from aiogram import Bot, Dispatcher, types
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from aiogram.filters import Command
+import telebot
+from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 from dotenv import load_dotenv
 
 # Загружаем переменные из .env
@@ -18,9 +16,8 @@ logging.basicConfig(level=logging.INFO)
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CRYPTOBOT_API_KEY = os.getenv("CRYPTOBOT_API_KEY")
 
-# Создаём бота и диспетчер
-bot = Bot(token=TELEGRAM_BOT_TOKEN)
-dp = Dispatcher()
+# Создаём бота
+bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 
 # Файл пользователей
 USERS_FILE = "users.json"
@@ -39,6 +36,15 @@ except json.JSONDecodeError:
 
 # Временное хранилище платежей
 pending_payments = {}
+
+# Обработчик команды /start
+@bot.message_handler(commands=['start'])
+def start(message):
+    bot.send_message(message.chat.id, "Привет! Я бот, подключённый к CryptoBot API.")
+
+# Запуск бота
+logging.info("Бот запущен. Ожидание сообщений...")
+bot.polling(none_stop=True)
 
 # Создаем эндпоинт для получения webhook (для API)
 @app.post("/cryptobot_webhook")
