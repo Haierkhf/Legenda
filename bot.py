@@ -55,30 +55,6 @@ import os
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 from dotenv import load_dotenv
 
-# Загружаем переменные окружения
-load_dotenv()
-
-# Токен бота
-API_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-
-# Создаём бота
-bot = telebot.TeleBot(API_TOKEN)
-
-# Файл пользователей
-USERS_FILE = "users.json"
-
-# Проверяем, существует ли файл users.json
-if not os.path.exists(USERS_FILE):
-    with open(USERS_FILE, "w", encoding="utf-8") as f:
-        json.dump({}, f)
-
-# Загружаем users.json
-try:
-    with open(USERS_FILE, "r", encoding="utf-8") as f:
-        users = json.load(f)
-except json.JSONDecodeError:
-    users = {}
-
 # Главное меню
 def main_menu():
     markup = InlineKeyboardMarkup()
@@ -145,42 +121,6 @@ def create_bot_callback(call: CallbackQuery):
         bot.edit_message_text("Главное меню", call.message.chat.id, call.message.message_id, reply_markup=main_menu())
 
     bot.answer_callback_query(call.id, response)
-
-# Запуск бота
-bot.polling()
-import telebot
-import json
-import os
-import requests
-import logging
-from fastapi import FastAPI, Request
-from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
-from dotenv import load_dotenv
-
-# Загружаем переменные окружения
-load_dotenv()
-
-# Токены
-API_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-CRYPTOBOT_API_KEY = os.getenv("CRYPTOBOT_API_KEY")
-
-# Создаём бота
-bot = telebot.TeleBot(API_TOKEN)
-
-# Файл пользователей
-USERS_FILE = "users.json"
-
-# Проверяем, существует ли файл users.json
-if not os.path.exists(USERS_FILE):
-    with open(USERS_FILE, "w", encoding="utf-8") as f:
-        json.dump({}, f)
-
-# Загружаем users.json
-try:
-    with open(USERS_FILE, "r", encoding="utf-8") as f:
-        users = json.load(f)
-except json.JSONDecodeError:
-    users = {}
 
 # Временное хранилище платежей
 pending_payments = {}
@@ -256,39 +196,6 @@ async def cryptobot_webhook(request: Request):
         else:
             logging.warning("Платеж получен, но пользователь не найден.")
     return {"status": "ok"}
-
-# Запуск бота
-bot.polling()
-import telebot
-import os
-import json
-import logging
-from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
-from dotenv import load_dotenv
-
-# Загружаем переменные окружения
-load_dotenv()
-
-# Токен бота
-API_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-
-# Создаём бота
-bot = telebot.TeleBot(API_TOKEN)
-
-# Файл пользователей
-USERS_FILE = "users.json"
-
-# Проверяем, существует ли файл users.json
-if not os.path.exists(USERS_FILE):
-    with open(USERS_FILE, "w", encoding="utf-8") as f:
-        json.dump({}, f)
-
-# Загружаем users.json
-try:
-    with open(USERS_FILE, "r", encoding="utf-8") as f:
-        users = json.load(f)
-except json.JSONDecodeError:
-    users = {}
 
 # Главное меню
 def main_menu():
