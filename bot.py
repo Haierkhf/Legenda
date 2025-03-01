@@ -106,32 +106,30 @@ async def profile_handler(callback_query: types.CallbackQuery):
 @dp.callback_query(lambda c: c.data and c.data.startswith("pay_"))
 async def pay_handler(callback_query: types.CallbackQuery):
     user_id = str(callback_query.from_user.id)
-    amount_usd = 22.80  # Цена услуги
+    amount_usd = 22.80  # Цена 
+try:
+    response = requests.post(
+        "https://pay.crypt.bot/api/createInvoice",
+        json={
+            "asset": "USDT",
+            "currency": "USD",
+            "amount": amount_usd
+        },
+        headers={"Crypto-Pay-API-Token": CRYPTOBOT_API_KEY},
+    )
 
-    try:
-        response = requests.post(
-            "https://pay.crypt.bot/api/createInvoice",
-            json={
-                "asset": "USDT",
-                "currency": "USD",
-                "amount": amount_usd
-            },
-            headers={"Crypto-Pay-API-Token": CRYPTOBOT_API_KEY},
-        )
+    if response.ok:
+        data = response.json()
+        if "result" in data:
+            pay_url = data["result"]["pay_url"]
+            invoice_id = data["result"]["invoice_id"]
 
-        if response.ok:
-            data = response.json()
-            if "result" in data:
-                pay_url = data["result"]["pay_url"]
-                invoice_id = data["result"]["invoice_id"]
-                
-                # Сохраняем ID платежа
-                pending_payments[user_id] = invoice_id
+            # Сохраняем ID платежа
+            pending_payments[user_id] = invoice_id
 
-                # Отправляем пользователю ссылку на оплату
-   except Exception as e:
-       await callback_query.message.answer("Ошибка при обработке платежа")
-       print(f"Ошибка при создании счета: {e}")
+    except Exception as e:  # <-- Убедись, что тут 4 пробела
+    await callback_query.message.answer("Ошибка при обработке платежа.")
+    print(f"Ошибка при создании счета: {e}")
 
 @app.post("/cryptobot_webhook")
 async def cryptobot_webhook(request: Request):
