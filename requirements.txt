@@ -1,10 +1,7 @@
-aiogram
+pyTelegramBotAPI==4.0.0
 python-dotenv
 requests
 fastapi
 uvicorn
-aiohttp
-pip
-setuptools
-wheel
+aiohttp==3.8.1
 typing-extensions==4.8.0
