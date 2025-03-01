@@ -8,3 +8,4 @@ pip
 setuptools
 wheel
 typing-extensions==4.8.0
+aiogram.utils
