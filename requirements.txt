@@ -1,7 +1,5 @@
-pyTelegramBotAPI==4.7.0
+pyTelegramBotAPI==4.9.0  # Для telebot
 python-dotenv
 requests
 fastapi
 uvicorn
-aiohttp==3.8.1
-typing-extensions==4.8.0
