@@ -24,7 +24,6 @@ CRYPTOBOT_API_KEY = os.getenv("CRYPTOBOT_API_KEY")
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 app = FastAPI()
-
 # Файл пользователей
 USERS_FILE = "users.json"
 
@@ -103,33 +102,44 @@ async def profile_handler(callback_query: types.CallbackQuery):
 
     await callback_query.message.answer(profile_text, parse_mode="Markdown")
     # Обработчик платежей через CryptoBot
+import logging
+import requests
+from fastapi import FastAPI, Request
+
+app = FastAPI()
+CRYPTOBOT_API_KEY = "347583:AAr39UUQRuaxRGshwKo0zFHQnK5n3KMWkzr"
+pending_payments = {}
+
+# Обработчик платежей через CryptoBot
 @dp.callback_query(lambda c: c.data and c.data.startswith("pay_"))
 async def pay_handler(callback_query: types.CallbackQuery):
     user_id = str(callback_query.from_user.id)
-    amount_usd = 22.80  # Цена 
-try:
-    response = requests.post(
-        "https://pay.crypt.bot/api/createInvoice",
-        json={
-            "asset": "USDT",
-            "currency": "USD",
-            "amount": amount_usd
-        },
-        headers={"Crypto-Pay-API-Token": CRYPTOBOT_API_KEY},
-    )
+    amount_usd = 22.80  # Цена
 
-    if response.ok:
-        data = response.json()
-        if "result" in data:
-            pay_url = data["result"]["pay_url"]
-            invoice_id = data["result"]["invoice_id"]
+    try:
+        response = requests.post(
+            "https://pay.crypt.bot/api/createInvoice",
+            json={
+                "asset": "USDT",
+                "currency": "USD",
+                "amount": amount_usd
+            },
+            headers={"Crypto-Pay-API-Token": CRYPTOBOT_API_KEY},
+        )
 
-            # Сохраняем ID платежа
-            pending_payments[user_id] = invoice_id
+        if response.ok:
+            data = response.json()
+            if "result" in data:
+                pay_url = data["result"]["pay_url"]
+                invoice_id = data["result"]["invoice_id"]
 
-    except Exception as e:  # <-- Убедись, что тут 4 пробела
-    await callback_query.message.answer("Ошибка при обработке платежа.")
-    print(f"Ошибка при создании счета: {e}")
+                # Сохраняем ID платежа
+                pending_payments[user_id] = invoice_id
+
+    except Exception as e:
+        await callback_query.message.answer("Ошибка при обработке платежа.")
+        print(f"Ошибка при создании счета: {e}")
+        return  # Завершаем выполнение функции при ошибке
 
 @app.post("/cryptobot_webhook")
 async def cryptobot_webhook(request: Request):
@@ -137,7 +147,7 @@ async def cryptobot_webhook(request: Request):
     logging.info(f"Webhook received: {data}")  # Логируем данные для отладки
 
     if "invoice_id" in data and "status" in data and data["status"] == "paid":
-    invoice_id = data["invoice_id"]
+        invoice_id = data["invoice_id"]
 
     # Найти пользователя, оплатившего инвойс
     user_id = None
