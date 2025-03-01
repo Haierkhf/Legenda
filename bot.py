@@ -8,6 +8,9 @@ from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 from dotenv import load_dotenv
 from fastapi import Request
 
+# Создаем объект приложения FastAPI
+app = FastAPI()
+
 @app.post("/cryptobot_webhook")
 async def cryptobot_webhook(request: Request):
     data = await request.json()
