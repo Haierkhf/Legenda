@@ -20,7 +20,7 @@ async def cryptobot_webhook(request: Request):
     # Логика обработки webhook
     print(data)
     return {"status": "received"}
-
+    
 # Включаем логирование
 logging.basicConfig(level=logging.INFO)
 
