@@ -101,13 +101,12 @@ async def profile_handler(callback_query: types.CallbackQuery):
     )
 
     await callback_query.message.answer(profile_text, parse_mode="Markdown")
-    # Обработчик платежей через CryptoBot
-import logging
+    import logging
 import requests
 from fastapi import FastAPI, Request
 
 app = FastAPI()
-CRYPTOBOT_API_KEY = "347583:AAr39UUQRuaxRGshwKo0zFHQnK5n3KMWkzr"
+CRYPTOBOT_API_KEY = "your_api_key_here"
 pending_payments = {}
 
 # Обработчик платежей через CryptoBot
@@ -149,14 +148,17 @@ async def cryptobot_webhook(request: Request):
     if "invoice_id" in data and "status" in data and data["status"] == "paid":
         invoice_id = data["invoice_id"]
 
-    # Найти пользователя, оплатившего инвойс
-    user_id = None
-    for uid, inv_id in pending_payments.items():
-        if inv_id == invoice_id:
-        user_id = uid
-        break
+        # Найти пользователя, оплатившего инвойс
+        user_id = None
+        for uid, inv_id in pending_payments.items():
+            if inv_id == invoice_id:
+                user_id = uid
+                break  # Выходим из цикла, если нашли совпадение
 
-    if user_id:
+        if user_id:
+            print(f"Оплата получена от пользователя: {user_id}")
+        else:
+            print("Платеж получен, но пользователь не найден.")
         # Добавляем сумму к балансу
         users[user_id]["balance"] += float(data["amount"])  # Пример
 
