@@ -13,8 +13,8 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 
 # Токены
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "замени_на_свой_токен")
-CRYPTOBOT_API_KEY = os.getenv("CRYPTOBOT_API_KEY", "замени_на_свой_ключ")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "7756038660:AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo")
+CRYPTOBOT_API_KEY = os.getenv("CRYPTOBOT_API_KEY", "347583:AA2FTH9et0kfdviBIOv9RfeDPUYq5HAcbRj")
 CRYPTOBOT_API_URL = "https://pay.crypt.bot/api"  # Правильный API URL
 
 # Проверяем подключение к Telegram Bot API
