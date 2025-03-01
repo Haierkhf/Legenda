@@ -17,7 +17,7 @@ import requests
 
 # Токены
 TELEGRAM_BOT_TOKEN = "7756038660:AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo"
-CRYPTOBOT_API_KEY = "347347583583:AAr39UUQRuaxRGshwKo0zFHQnK5n3KMWkzr"
+CRYPTOBOT_API_KEY = "347583:AA2FTH9et0kfdviBIOv9RfeDPUYq5HAcbRj"
 CRYPTOBOT_API_URL = "https://pay.crypt.bot/api"  # Правильный API URL
 
 # Проверяем доступность API CryptoBot
