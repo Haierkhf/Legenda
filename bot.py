@@ -87,7 +87,19 @@ def start_handler(message):
 
     bot.send_message(message.chat.id, "Привет! Я бот. Выбери действие:", reply_markup=main_menu())
 
-# Функция, создающая подменю "Создать бота"
+from telebot import TeleBot, types
+from telebot.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+
+bot = TeleBot('YOUR_BOT_TOKEN')
+
+# Главное меню
+def main_menu():
+    markup = InlineKeyboardMarkup()
+    markup.add(InlineKeyboardButton(text="Создать бота", callback_data="create_bot"))
+    markup.add(InlineKeyboardButton(text="Профиль", callback_data="profile"))
+    return markup
+
+# Подменю для создания бота
 def create_bot_menu():
     markup = InlineKeyboardMarkup()
     markup.add(InlineKeyboardButton(text="📢 Автопостинг", callback_data="create_autoposting_bot"))
@@ -101,6 +113,11 @@ def create_bot_menu():
     markup.add(InlineKeyboardButton(text="📅 Бронирование услуг", callback_data="create_booking_bot"))
     markup.add(InlineKeyboardButton(text="🔙 Назад", callback_data="main_menu"))
     return markup
+
+# Обработчик нажатия кнопок в главном меню
+@bot.callback_query_handler(func=lambda call: call.data == "create_bot")
+def create_bot_menu_callback(call: CallbackQuery):
+    bot.edit_message_text("Выберите тип бота для создания:", call.message.chat.id, call.message.message_id, reply_markup=create_bot_menu())
 
 # Обработчик нажатия кнопок в подменю "Создать бота"
 @bot.callback_query_handler(func=lambda call: call.data.startswith('create_'))
@@ -131,7 +148,7 @@ def create_bot_callback(call: CallbackQuery):
         bot.edit_message_text("Главное меню", call.message.chat.id, call.message.message_id, reply_markup=main_menu())
 
     bot.answer_callback_query(call.id, response)
-
+    bot.send_message(call.message.chat.id, response)  # Отправить текст с результатом выбора
 # Временное хранилище платежей
 pending_payments = {}
 
