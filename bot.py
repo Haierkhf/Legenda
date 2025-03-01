@@ -64,6 +64,16 @@ async def start_handler(message: types.Message):
 
     await message.answer("Привет! Я бот. Выбери действие:", reply_markup=main_menu())
     # Подменю "Создать бота"
+from aiogram import Bot, Dispatcher, types
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.utils import executor
+
+API_TOKEN = 'YOUR_BOT_API_TOKEN'  # Замените на ваш токен
+
+bot = Bot(token=API_TOKEN)
+dp = Dispatcher(bot)
+
+# Функция, создающая подменю "Создать бота"
 def create_bot_menu():
     buttons = [
         [InlineKeyboardButton(text="📢 Автопостинг", callback_data="create_autoposting_bot")],
@@ -78,6 +88,42 @@ def create_bot_menu():
         [InlineKeyboardButton(text="🔙 Назад", callback_data="main_menu")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+# Обработчик нажатия кнопок в подменю "Создать бота"
+@dp.callback_query_handler(lambda c: c.data.startswith('create_'))
+async def create_bot_callback(query: types.CallbackQuery):
+    data = query.data
+    if data == "create_autoposting_bot":
+        await query.answer("Вы выбрали бот для автопостинга.")
+    elif data == "create_digital_goods_bot":
+        await query.answer("Вы выбрали бот для продажи цифровых товаров.")
+    elif data == "create_crypto_arbitrage_bot":
+        await query.answer("Вы выбрали бот для арбитража криптовалют.")
+    elif data == "create_ai_image_bot":
+        await query.answer("Вы выбрали бот для генерации изображений AI.")
+    elif data == "create_pdf_bot":
+        await query.answer("Вы выбрали бот для генерации PDF-документов.")
+    elif data == "create_subscriptions_bot":
+        await query.answer("Вы выбрали бот для продажи подписок.")
+    elif data == "create_airdrop_bot":
+        await query.answer("Вы выбрали бот для поиска airdrop'ов.")
+    elif data == "create_proxy_bot":
+        await query.answer("Вы выбрали бот для продажи VPN/прокси.")
+    elif data == "create_booking_bot":
+        await query.answer("Вы выбрали бот для бронирования услуг.")
+    elif data == "main_menu":
+        await query.answer("Возвращаемся в главное меню.")
+        # Вернуть главное меню (если нужно)
+        # await query.message.edit_text("Главное меню", reply_markup=main_menu())
+
+# Основная команда для старта бота
+@dp.message_handler(commands=['start'])
+async def start(message: types.Message):
+    await message.answer("Выберите тип бота для создания:", reply_markup=create_bot_menu())
+
+if __name__ == '__main__':
+    from aiogram import executor
+    executor.start_polling(dp, skip_updates=True)
 
 # Обработчик кнопки "Профиль"
 @dp.callback_query(lambda c: c.data == "profile")
