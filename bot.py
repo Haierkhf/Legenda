@@ -53,6 +53,7 @@ def start_handler(message):
             json.dump(users, f, indent=4)
     bot.send_message(message.chat.id, "Привет! Я бот. Выбери действие:", reply_markup=main_menu())
 
+# Подменю для создания бота
 def create_bot_menu():
     markup = InlineKeyboardMarkup()
     options = [
@@ -71,31 +72,12 @@ def create_bot_menu():
         markup.add(InlineKeyboardButton(text=text, callback_data=data))
     return markup
 
+# Обработчик кнопки "Создать бота"
 @bot.callback_query_handler(func=lambda call: call.data == "create_bot")
 def create_bot_menu_callback(call: CallbackQuery):
     bot.edit_message_text("Выберите тип бота для создания:", call.message.chat.id, call.message.message_id, reply_markup=create_bot_menu())
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith('create_'))
-def create_bot_callback(call: CallbackQuery):
-    responses = {
-        "create_autoposting_bot": "Вы выбрали бот для автопостинга.",
-        "create_digital_goods_bot": "Вы выбрали бот для продажи цифровых товаров.",
-        "create_crypto_arbitrage_bot": "Вы выбрали бот для арбитража криптовалют.",
-        "create_ai_image_bot": "Вы выбрали бот для генерации изображений AI.",
-        "create_pdf_bot": "Вы выбрали бот для генерации PDF-документов.",
-        "create_subscriptions_bot": "Вы выбрали бот для продажи подписок.",
-        "create_airdrop_bot": "Вы выбрали бот для поиска airdrop'ов.",
-        "create_proxy_bot": "Вы выбрали бот для продажи VPN/прокси.",
-        "create_booking_bot": "Вы выбрали бот для бронирования услуг.",
-        "main_menu": "Возвращаемся в главное меню."
-    }
-    response = responses.get(call.data, "Неизвестный выбор.")
-    bot.answer_callback_query(call.id, response)
-    if call.data == "main_menu":
-        bot.edit_message_text("Главное меню", call.message.chat.id, call.message.message_id, reply_markup=main_menu())
-    else:
-        bot.send_message(call.message.chat.id, response)
-        # Обработчик выбора типа бота
+# Обработчик выбора типа бота
 @bot.callback_query_handler(func=lambda call: call.data.startswith('create_'))
 def create_bot_callback(call: CallbackQuery):
     user_id = str(call.from_user.id)
@@ -136,7 +118,7 @@ def ask_bot_name(message):
         markup.add(InlineKeyboardButton(text="🔙 Отмена", callback_data="main_menu"))
 
         bot.send_message(message.chat.id, f"Бот *{bot_name}* готов к созданию.\nЦена: 22.80 USDT", parse_mode="Markdown", reply_markup=markup)
-# Обработчик кнопки "Профиль"
+  # обработчик кнопки "Профиль"
 @bot.callback_query_handler(func=lambda call: call.data == "profile")
 def profile_callback(call: CallbackQuery):
     user_id = str(call.from_user.id)
