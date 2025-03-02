@@ -137,7 +137,33 @@ def profile_callback(call: CallbackQuery):
 
     else:
         response = "⚠️ Вы не зарегистрированы в системе."
+@bot.callback_query_handler(func=lambda call: call.data == "profile")
+def profile_callback(call: CallbackQuery):
+    user_id = str(call.from_user.id)
 
+    try:
+        users = load_users()  # Загружаем пользователей из файла
+
+        if user_id in users:
+            username = users[user_id].get("username", "Не указан")
+            balance = users[user_id].get("balance", 0)
+
+            ref_link = f"https://t.me/{bot.get_me().username}?start={user_id}"
+
+            response = (f"👤 *Ваш профиль:*\n\n"
+                       f"🔹 *Имя пользователя:* @{username}\n"
+                       f"💰 *Баланс:* {balance} USDT\n\n"
+                       f"🔗 *Ваша реферальная ссылка:*\n{ref_link}")
+        else:
+            response = "⚠️ Вы не зарегистрированы в системе."
+
+        bot.answer_callback_query(call.id)
+        bot.send_message(call.message.chat.id, response, parse_mode="Markdown")
+
+    except Exception as e:
+        logger.error(f"Ошибка при обработке профиля для пользователя {user_id}: {e}")
+        bot.answer_callback_query(call.id, "Произошла ошибка при обработке вашего профиля.")
+        bot.send_message(call.message.chat.id, "Произошла ошибка. Попробуйте позже.")
     bot.answer_callback_query(call.id)
     bot.send_message(call.message.chat.id, response, parse_mode="Markdown")
 @bot.callback_query_handler(func=lambda call: call.data == "info")
@@ -244,7 +270,31 @@ def start(message):
     change_balance_for_myself(new_balance)
 
     bot.send_message(message.chat.id, "Привет! Я бот. Баланс обновлен.")
+import logging
+import json
 
+# Настройка логирования
+logging.basicConfig(level=logging.DEBUG)  # Уровень логирования — DEBUG (можно настроить на INFO, ERROR, etc.)
+logger = logging.getLogger(__name__)
+
+USERS_FILE = "users.json"
+
+# Функция для загрузки пользователей из файла
+def load_users():
+    try:
+        with open(USERS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        logger.error(f"Ошибка при загрузке users.json: {e}")  # Логируем ошибку
+        return {}  # Если файл не найден или пустой, возвращаем пустой словарь
+
+# Функция для сохранения пользователей в файл
+def save_users(users):
+    try:
+        with open(USERS_FILE, "w", encoding="utf-8") as f:
+            json.dump(users, f, indent=4, ensure_ascii=False)
+    except Exception as e:
+        logger.error(f"Ошибка при сохранении users.json: {e}")  # Логируем ошибку
 # Запуск бота
 logging.info("Бот запущен. Ожидание сообщений...")
 bot.polling(none_stop=True)
