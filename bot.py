@@ -102,12 +102,8 @@ def create_bot_menu():
     
     return markup
 
-@bot.callback_query_handler(func=lambda call: call.data == "create_bot")
+@bot.callback_query_handler(func=lambda call: call.data.startswith("create_"))
 def create_bot_type_callback(call: CallbackQuery):
-    bot.edit_message_text("Выберите тип бота для создания:", call.message.chat.id, call.message.message_id)
-
-    # <-- Пустая строка ДОЛЖНА быть здесь!
-
     user_id = str(call.from_user.id)
     bot_type = call.data
 
@@ -117,32 +113,52 @@ def create_bot_type_callback(call: CallbackQuery):
     users[user_id].update({"selected_bot_type": bot_type, "state": "waiting_for_bot_name"})
     save_users(users)
 
-bot.send_message(call.message.chat.id, "Введите название для нового бота")
-bot.register_next_step_handler(call.message, process_bot_name)
+    # Эти строки должны быть внутри функции!
+    bot.send_message(call.message.chat.id, "Введите название для нового бота")
+    bot.register_next_step_handler(call.message, process_bot_name)
+    
 # <-- Пустая строка перед новой функцией!
+def send_payment_link(user_id, chat_id, price):
+    try:
+        response = requests.post(
+            "https://pay.crypt.bot/api/createInvoice",
+            json={"asset": "USDT", "currency": "USD", "amount": price},
+            headers={"Crypto-Pay-API-Token": CRYPTOBOT_API_KEY},
+        )
+
+        if response.ok:
+            data = response.json()
+            if "result" in data:
+                pay_url = data["result"]["pay_url"]
+                pending_payments[user_id] = data["result"]["invoice_id"]
+                bot.send_message(chat_id, f"Оплатите по ссылке: {pay_url}")
+        else:
+            bot.send_message(chat_id, "Ошибка при создании платежа.")
+    except Exception as e:
+        logging.error(f"Ошибка при создании счета: {e}")
+        bot.send_message(chat_id, "Ошибка при обработке платежа.")
 
 def process_bot_name(message):
     user_id = str(message.from_user.id)
     bot_name = message.text
 
     users = load_users()
+    if user_id not in users:
+        users[user_id] = {"balance": 0}  # Исправлено: создаём пользователя, если его нет
+
     users[user_id]["bot_name"] = bot_name
     save_users(users)
 
     price = 22.80  # Цена создания бота
 
-users = load_users()  # Загружаем пользователей
-if user_id not in users:
-    users[user_id] = {"balance": 0}  # Если пользователя нет, создаем его с нулевым балансом
+    user_balance = users[user_id].get("balance", 0)  # Получаем баланс
 
-user_balance = users[user_id].get("balance", 0)  # Получаем баланс
-
-if user_balance >= price:
-    users[user_id]["balance"] -= price  # Вычитаем стоимость бота
-    save_users(users)
-    finalize_bot_creation(user_id, message.chat.id)  # Завершаем создание бота
-else:
-    send_payment_link(user_id, message.chat.id, price)  # Отправляем ссылку на оплату
+    if user_balance >= price:
+        users[user_id]["balance"] -= price  # Вычитаем стоимость бота
+        save_users(users)
+        finalize_bot_creation(user_id, message.chat.id)  # Завершаем создание бота
+    else:
+        send_payment_link(user_id, message.chat.id, price)  # Отправляем ссылку на оплату
     try:
         response = requests.post(
             "https://pay.crypt.bot/api/createInvoice",
@@ -167,13 +183,13 @@ def finalize_bot_creation(user_id, chat_id):
     bot_type = users[user_id]["selected_bot_type"]
     bot_name = users[user_id]["bot_name"]
 
-    # Отправляем информацию админу
     bot.send_message(ADMIN_ID, f"❗ Новый бот создан!\n👤 Пользователь: {user_id}\n📌 Тип: {bot_type}\n📝 Название: {bot_name}")
-
     bot.send_message(chat_id, "✅ Ваш бот успешно создан!")
     users[user_id]["state"] = "none"
     save_users(users)
-    @app.post("/cryptobot_webhook")
+
+# <-- Вынес декоратор `@app.post` из функции!
+@app.post("/cryptobot_webhook")
 async def cryptobot_webhook(request: Request):
     data = await request.json()
     logging.info(f"Webhook received: {data}")
@@ -187,6 +203,7 @@ async def cryptobot_webhook(request: Request):
             finalize_bot_creation(user_id, user_id)  # Завершаем создание бота
             del pending_payments[user_id]
     return {"status": "ok"}
+    
 if __name__ == "__main__":
     logging.info("Бот запущен и готов к работе.")
     bot.polling(none_stop=True)
