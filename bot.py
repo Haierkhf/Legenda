@@ -10,9 +10,9 @@ from fastapi import FastAPI, Request
 # Загрузка переменных окружения
 load_dotenv()
 
-TELEGRAM_BOT_TOKEN = os.getenv("7756038660:AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo")
-CRYPTOBOT_API_KEY = os.getenv("347583:AA2FTH9et0kfdviBIOv9RfeDPUYq5HAcbRj")
-ADMIN_ID = os.getenv("6402443549")  # ID, куда отправлять информацию о новых ботах
+TELEGRAM_BOT_TOKEN = "7756038660:AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo"
+CRYPTOBOT_API_KEY = "347583:AA2FTH9et0kfdviBIOv9RfeDPUYq5HAcbRj"
+ADMIN_ID = "6402443549"  # ID, куда отправлять информацию о новых ботах
 
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 app = FastAPI()
