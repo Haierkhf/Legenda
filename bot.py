@@ -95,7 +95,28 @@ def create_bot_callback(call: CallbackQuery):
         bot.edit_message_text("Главное меню", call.message.chat.id, call.message.message_id, reply_markup=main_menu())
     else:
         bot.send_message(call.message.chat.id, response)
+# Обработчик кнопки "Профиль"
+@bot.callback_query_handler(func=lambda call: call.data == "profile")
+def profile_callback(call: CallbackQuery):
+    user_id = str(call.from_user.id)
 
+    if user_id in users:
+        username = users[user_id].get("username", "Не указан")
+        balance = users[user_id].get("balance", 0)
+
+        # Генерируем реферальную ссылку
+        ref_link = f"https://t.me/{bot.get_me().username}?start={user_id}"
+
+        response = (f"👤 *Ваш профиль:*\n\n"
+                    f"🔹 *Имя пользователя:* @{username}\n"
+                    f"💰 *Баланс:* {balance} USDT\n\n"
+                    f"🔗 *Ваша реферальная ссылка:*\n{ref_link}")
+
+    else:
+        response = "⚠️ Вы не зарегистрированы в системе."
+
+    bot.answer_callback_query(call.id)
+    bot.send_message(call.message.chat.id, response, parse_mode="Markdown")
 @bot.callback_query_handler(func=lambda call: call.data == "info")
 def info_handler(call: CallbackQuery):
     info_text = (
