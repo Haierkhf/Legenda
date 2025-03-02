@@ -54,17 +54,18 @@ def update_balance(user_id, amount):
     if user_id in users:
         users[user_id]["balance"] += amount
         save_users(users)
-        def main_menu():
+
+def main_menu():  # <-- Теперь объявлена правильно
     markup = InlineKeyboardMarkup()
     buttons = [
         ("🤖 Создать бота", "create_bot"),
         ("ℹ️ Информация", "info"),
-        ("💬 Отзывы", "https://t.me/nWf0L9BBCoJlY2Qy"),
+        ("💬 Отзывы", "https://t.me/nwf0L9BBCoJYl2Qy"),
         ("👤 Профиль", "profile"),
         ("🔒 Политика конфиденциальности", "privacy")
     ]
     for text, data in buttons:
-        markup.add(InlineKeyboardButton(text=text, callback_data=data if "http" not in data else None, url=data if "http" in data else None))
+        markup.add(InlineKeyboardButton(text=text, callback_data=data))
     return markup
 
 @bot.message_handler(commands=['start'])
