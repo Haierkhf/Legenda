@@ -285,21 +285,115 @@ def create_bot_callback(call: CallbackQuery):
     }
 
     if bot_type in bot_type_names:
-        # Просим ввести название для нового бота
-        bot.send_message(call.message.chat.id, f"Вы выбрали {bot_type_names[bot_type]}.\n\nВведите название для нового бота:")
+# Обработчик кнопки "Создать бота"
+@bot.callback_query_handler(func=lambda call: call.data == "create_bot")
+def create_bot_callback(call: CallbackQuery):
+    user_id = str(call.from_user.id)
+    users = load_users()  # Загружаем пользователей
 
-        # Сохраняем выбранный тип бота
-        users[user_id] = {"selected_bot_type": bot_type, "state": "waiting_for_name"}
-        
-        # Переход в состояние ожидания названия бота
-        bot.register_next_step_handler(call.message, ask_bot_name)
+    if user_id in users:
+        user_balance = users[user_id].get("balance", 0)
+        payment_amount = 22.80  # Стоимость создания бота
+
+        # Проверка наличия средств
+        if user_balance >= payment_amount:
+            # Уменьшаем баланс пользователя
+            new_balance = user_balance - payment_amount
+            users[user_id]["balance"] = new_balance
+            save_users(users)
+
+            # Отправляем пользователю сообщение о успешной оплате
+            bot.send_message(call.message.chat.id, f"✅ Оплата прошла успешно! Новый баланс: {new_balance} USDT.")
+            bot.send_message(call.message.chat.id, "Теперь выберите тип бота для создания:")
+
+            # Логика выбора типа бота
+            bot.edit_message_text("Выберите тип бота для создания:", call.message.chat.id, call.message.message_id, reply_markup=create_bot_menu())
+            
+        else:
+            # Если средств недостаточно, отправляем чек на оплату
+            bot.send_message(call.message.chat.id, f"❌ У вас недостаточно средств для создания бота. Пожалуйста, оплатите {payment_amount} USDT.")
+            
+            # Отправляем кнопку для оплаты
+            markup = InlineKeyboardMarkup()
+            markup.add(InlineKeyboardButton("💳 Оплатить создание бота", callback_data="pay_create_bot"))
+            bot.send_message(call.message.chat.id, "Для оплаты нажмите кнопку ниже:", reply_markup=markup)
+    else:
+        bot.send_message(call.message.chat.id, "⚠️ Вы не зарегистрированы в системе.")
+
+# Обработчик кнопки "Оплатить создание бота"
+@bot.callback_query_handler(func=lambda call: call.data == "pay_create_bot")
+def pay_create_bot_callback(call: CallbackQuery):
+    user_id = str(call.from_user.id)
+    users = load_users()  # Загружаем пользователей
+
+    if user_id in users:
+        user_balance = users[user_id].get("balance", 0)
+        payment_amount = 22.80  # Стоимость создания бота
+
+        # Проверка наличия средств
+        if user_balance >= payment_amount:
+            # Уменьшаем баланс пользователя
+            new_balance = user_balance - payment_amount
+            users[user_id]["balance"] = new_balance
+            save_users(users)
+
+            # Отправляем пользователю сообщение о успешной оплате
+            bot.send_message(call.message.chat.id, f"✅ Оплата прошла успешно! Новый баланс: {new_balance} USDT.")
+            bot.send_message(call.message.chat.id, "Теперь выберите тип бота для создания:")
+
+            # Логика выбора типа бота
+            bot.edit_message_text("Выберите тип бота для создания:", call.message.chat.id, call.message.message_id, reply_markup=create_bot_menu())
+
+        else:
+            bot.send_message(call.message.chat.id, f"❌ У вас недостаточно средств для создания бота. Баланс: {user_balance} USDT. Необходимая сумма: {payment_amount} USDT.")
+    else:
+        bot.send_message(call.message.chat.id, "⚠️ Вы не зарегистрированы в системе.")
+
+# Обработчик выбора типа бота
+@bot.callback_query_handler(func=lambda call: call.data.startswith('create_'))
+def create_bot_type_callback(call: CallbackQuery):
+    user_id = str(call.from_user.id)
+    bot_type = call.data
+
+    bot_type_names = {
+        "create_autoposting_bot": "📢 Автопостинг",
+        "create_digital_goods_bot": "💳 Продажа цифровых товаров",
+        "create_crypto_arbitrage_bot": "📊 Арбитраж криптовалют",
+        "create_ai_image_bot": "🖼️ Генерация изображений AI",
+        "create_pdf_bot": "📝 Генерация PDF-документов",
+        "create_subscriptions_bot": "🔗 Продажа подписок",
+        "create_airdrop_bot": "🔍 Поиск airdrop'ов",
+        "create_proxy_bot": "🔒 Продажа VPN/прокси",
+        "create_booking_bot": "📅 Бронирование услуг"
+    }
+
+    if bot_type in bot_type_names:
+        # Перед тем как предложить ввести название, проверяем баланс
+        user_balance = users[user_id].get("balance", 0)
+        payment_amount = 22.80  # Стоимость создания бота
+
+        # Если баланс достаточен, разрешаем вводить название
+        if user_balance >= payment_amount:
+            # Сохраняем выбранный тип бота
+            users[user_id] = {"selected_bot_type": bot_type, "state": "waiting_for_name"}
+            bot.send_message(call.message.chat.id, f"Вы выбрали {bot_type_names[bot_type]}.\n\nВведите название для нового бота:")
+
+            # Переход в состояние ожидания названия бота
+            bot.register_next_step_handler(call.message, ask_bot_name)
+        else:
+            # Если средств недостаточно, отправляем чек на оплату
+            bot.send_message(call.message.chat.id, f"❌ У вас недостаточно средств для создания бота. Пожалуйста, оплатите {payment_amount} USDT.")
+            
+            # Отправляем кнопку для оплаты
+            markup = InlineKeyboardMarkup()
+            markup.add(InlineKeyboardButton("💳 Оплатить создание бота", callback_data="pay_create_bot"))
+            bot.send_message(call.message.chat.id, "Для оплаты нажмите кнопку ниже:", reply_markup=markup)
 
 # Обработчик ввода названия бота
 def ask_bot_name(message):
     user_id = str(message.from_user.id)
     bot_name = message.text
 
-    # Проверяем, что пользователь зарегистрирован в системе
     if user_id in users and users[user_id].get("state") == "waiting_for_name":
         # Сохраняем введенное название бота
         users[user_id]["bot_name"] = bot_name
