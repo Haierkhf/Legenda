@@ -118,25 +118,7 @@ def ask_bot_name(message):
         markup.add(InlineKeyboardButton(text="🔙 Отмена", callback_data="main_menu"))
 
         bot.send_message(message.chat.id, f"Бот *{bot_name}* готов к созданию.\nЦена: 22.80 USDT", parse_mode="Markdown", reply_markup=markup)
-  # обработчик кнопки "Профиль"
-@bot.callback_query_handler(func=lambda call: call.data == "profile")
-def profile_callback(call: CallbackQuery):
-    user_id = str(call.from_user.id)
-
-    if user_id in users:
-        username = users[user_id].get("username", "Не указан")
-        balance = users[user_id].get("balance", 0)
-
-        # Генерируем реферальную ссылку
-        ref_link = f"https://t.me/{bot.get_me().username}?start={user_id}"
-
-        response = (f"👤 *Ваш профиль:*\n\n"
-                    f"🔹 *Имя пользователя:* @{username}\n"
-                    f"💰 *Баланс:* {balance} USDT\n\n"
-                    f"🔗 *Ваша реферальная ссылка:*\n{ref_link}")
-
-    else:
-        response = "⚠️ Вы не зарегистрированы в системе."
+# обработчик кнопки "Профиль"
 @bot.callback_query_handler(func=lambda call: call.data == "profile")
 def profile_callback(call: CallbackQuery):
     user_id = str(call.from_user.id)
@@ -148,6 +130,7 @@ def profile_callback(call: CallbackQuery):
             username = users[user_id].get("username", "Не указан")
             balance = users[user_id].get("balance", 0)
 
+            # Генерируем реферальную ссылку
             ref_link = f"https://t.me/{bot.get_me().username}?start={user_id}"
 
             response = (f"👤 *Ваш профиль:*\n\n"
