@@ -285,18 +285,23 @@ def create_bot_callback(call: CallbackQuery):
     }
 
     if bot_type in bot_type_names:
-    bot.send_message(call.message.chat.id, f"Вы выбрали {bot_type_names[bot_type]}.\n\nВведите название для нового бота:")
+        bot.send_message(call.message.chat.id, f"Вы выбрали {bot_type_names[bot_type]}.\n\nВведите название для нового бота:")
 
-    # Сохраняем выбранный тип бота
-    users[user_id] = {"selected_bot_type": bot_type}
+        # Сохраняем выбранный тип бота
+        users[user_id] = {"selected_bot_type": bot_type}
 
-    # Переход в состояние ожидания названия бота
-    bot.register_next_step_handler(call.message, ask_bot_name)
+        # Переход в состояние ожидания названия бота
+        bot.register_next_step_handler(call.message, ask_bot_name)
+
 # Обработчик кнопки "Создать бота"
 @bot.callback_query_handler(func=lambda call: call.data == "create_bot")
 def create_bot_callback(call: CallbackQuery):
     user_id = str(call.from_user.id)
     users = load_users()  # Загружаем пользователей
+
+    if user_id in users:
+        user_balance = users[user_id].get("balance", 0)
+        payment_amount = 22.80  # Стоимость создания бота
 
     if user_id in users:
         user_balance = users[user_id].get("balance", 0)
