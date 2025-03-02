@@ -83,7 +83,7 @@ def start_handler(message):
 
 def create_bot_menu():
     markup = InlineKeyboardMarkup()
-    options = [  # Исправлено: теперь используем options, а не buttons
+    options = [
         ("📢 Автопостинг", "create_autoposting_bot"),
         ("💳 Продажа цифровых товаров", "create_digital_goods_bot"),
         ("📊 Арбитраж криптовалют", "create_crypto_arbitrage_bot"),
@@ -95,8 +95,10 @@ def create_bot_menu():
         ("📅 Бронирование услуг", "create_booking_bot"),
         ("🔙 Назад", "main_menu")
     ]
-    for text, data in options:  # Исправлено: теперь корректно используется options
+    
+    for text, data in options:
         markup.add(InlineKeyboardButton(text=text, callback_data=data))
+    
     return markup
 
 @bot.callback_query_handler(func=lambda call: call.data == "create_bot")
@@ -107,9 +109,9 @@ def create_bot_type_callback(call: CallbackQuery):
     user_id = str(call.from_user.id)
     bot_type = call.data
 
-    users = load_users()
-    users[user_id] = {"selected_bot_type": bot_type, "state": "waiting_for_name"}
-    save_users(users)
+    if user_id not in users:
+    users[user_id] = {}  # Создаём пользователя, если его нет
+users[user_id].update({"selected_bot_type": bot_type, "state": "waiting_for_bot_name"})
 
     bot.send_message(call.message.chat.id, "Введите название для нового бота:")
     bot.register_next_step_handler(call.message, process_bot_name)
