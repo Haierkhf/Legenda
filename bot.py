@@ -3,6 +3,7 @@ import os
 import json
 import requests
 import telebot
+from telebot.types import CallbackQuery
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
@@ -101,9 +102,9 @@ def create_bot_menu():
     
     return markup
 
-@bot.callback_query_handler(func=lambda call: call.data == "create_b")
+@bot.callback_query_handler(func=lambda call: call.data == "create_bot")
 def create_bot_type_callback(call: CallbackQuery):
-    bot.edit_message_text("Выберите тип бота для создания:", call.message.chat.id)
+    bot.edit_message_text("Выберите тип бота для создания:", call.message.chat.id, call.message.message_id)
 
     # <-- Пустая строка ДОЛЖНА быть здесь!
 
@@ -118,7 +119,6 @@ def create_bot_type_callback(call: CallbackQuery):
 
 bot.send_message(call.message.chat.id, "Введите название для нового бота")
 bot.register_next_step_handler(call.message, process_bot_name)
-
 # <-- Пустая строка перед новой функцией!
 
 def process_bot_name(message):
@@ -130,16 +130,19 @@ def process_bot_name(message):
     save_users(users)
 
     price = 22.80  # Цена создания бота
-    user_balance = users[user_id].get("balance", 0)
 
-    if user_balance >= price:
-        users[user_id]["balance"] -= price
-        save_users(users)
-        finalize_bot_creation(user_id, message.chat.id)
-    else:
-        send_payment_link(user_id, message.chat.id, price)
+users = load_users()  # Загружаем пользователей
+if user_id not in users:
+    users[user_id] = {"balance": 0}  # Если пользователя нет, создаем его с нулевым балансом
 
-def send_payment_link(user_id, chat_id, price):
+user_balance = users[user_id].get("balance", 0)  # Получаем баланс
+
+if user_balance >= price:
+    users[user_id]["balance"] -= price  # Вычитаем стоимость бота
+    save_users(users)
+    finalize_bot_creation(user_id, message.chat.id)  # Завершаем создание бота
+else:
+    send_payment_link(user_id, message.chat.id, price)  # Отправляем ссылку на оплату
     try:
         response = requests.post(
             "https://pay.crypt.bot/api/createInvoice",
@@ -184,6 +187,6 @@ async def cryptobot_webhook(request: Request):
             finalize_bot_creation(user_id, user_id)  # Завершаем создание бота
             del pending_payments[user_id]
     return {"status": "ok"}
-    if __name__ == "__main__":
+if __name__ == "__main__":
     logging.info("Бот запущен и готов к работе.")
     bot.polling(none_stop=True)
