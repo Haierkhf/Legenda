@@ -80,7 +80,8 @@ def start_handler(message):
     users[user_id] = {"balance": 0, "username": message.from_user.username, "chat_id": message.chat.id}
 else:
     users[user_id]["chat_id"] = message.chat.id  # Если пользователь уже есть, обновляем chat_id
-        save_users(users)
+
+save_users(users)  # Отступ исправлен
 
     bot.send_message(message.chat.id, "Привет! Выберите действие:", reply_markup=main_menu())  # Исправлено: добавлены скобки
 
@@ -165,8 +166,9 @@ def process_bot_name(message):
 
 def finalize_bot_creation(user_id, chat_id):
     users = load_users()
-    bot_type = users[user_id]["selected_bot_type"]
-    bot_name = users[user_id]["bot_name"]
+
+    bot_type = users[user_id].get("selected_bot_type", "Неизвестный бот")
+    bot_name = users[user_id].get("bot_name", "Без названия")
 
     bot.send_message(ADMIN_ID, f"❗ Новый бот создан!\n👤 Пользователь: {user_id}\n📌 Тип: {bot_type}\n📝 Название: {bot_name}")
     bot.send_message(chat_id, "✅ Ваш бот успешно создан!")
