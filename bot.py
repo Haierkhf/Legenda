@@ -101,17 +101,22 @@ def create_bot_menu():
     
     return markup
 
-@bot.callback_query_handler(func=lambda call: call.data == "create_bot")
+@bot.callback_query_handler(func=lambda call: call.data == "create_b")
 def create_bot_callback(call: CallbackQuery):
-    bot.edit_message_text("Выберите тип бота для создания:", call.message.chat.id, call.message.message_id, reply_markup=create_bot_menu())
-    @bot.callback_query_handler(func=lambda call: call.data.startswith('create_'))
+    bot.edit_message_text("Выберите тип бота для создания:", call.message.chat.id)
+
+# <-- ПУСТАЯ СТРОКА НУЖНА ЗДЕСЬ
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("create_"))
 def create_bot_type_callback(call: CallbackQuery):
     user_id = str(call.from_user.id)
     bot_type = call.data
 
+    users = load_users()
     if user_id not in users:
-    users[user_id] = {}  # Создаём пользователя, если его нет
-users[user_id].update({"selected_bot_type": bot_type, "state": "waiting_for_bot_name"})
+        users[user_id] = {}  # Создаём пользователя, если его нет
+    users[user_id].update({"selected_bot_type": bot_type, "state": "waiting_for_bot_name"})
+    save_users(users)
 
     bot.send_message(call.message.chat.id, "Введите название для нового бота:")
     bot.register_next_step_handler(call.message, process_bot_name)
