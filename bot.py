@@ -6,7 +6,9 @@ import telebot
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
+import logging
 
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
