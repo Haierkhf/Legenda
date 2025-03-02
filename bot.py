@@ -95,6 +95,47 @@ def create_bot_callback(call: CallbackQuery):
         bot.edit_message_text("Главное меню", call.message.chat.id, call.message.message_id, reply_markup=main_menu())
     else:
         bot.send_message(call.message.chat.id, response)
+        # Обработчик выбора типа бота
+@bot.callback_query_handler(func=lambda call: call.data.startswith('create_'))
+def create_bot_callback(call: CallbackQuery):
+    user_id = str(call.from_user.id)
+    bot_type = call.data
+
+    bot_type_names = {
+        "create_autoposting_bot": "📢 Автопостинг",
+        "create_digital_goods_bot": "💳 Продажа цифровых товаров",
+        "create_crypto_arbitrage_bot": "📊 Арбитраж криптовалют",
+        "create_ai_image_bot": "🖼️ Генерация изображений AI",
+        "create_pdf_bot": "📝 Генерация PDF-документов",
+        "create_subscriptions_bot": "🔗 Продажа подписок",
+        "create_airdrop_bot": "🔍 Поиск airdrop'ов",
+        "create_proxy_bot": "🔒 Продажа VPN/прокси",
+        "create_booking_bot": "📅 Бронирование услуг"
+    }
+
+    if bot_type in bot_type_names:
+        bot.send_message(call.message.chat.id, f"Вы выбрали {bot_type_names[bot_type]}.\n\nВведите название для нового бота:")
+
+        # Сохраняем выбранный тип бота
+        users[user_id] = {"selected_bot_type": bot_type}
+        
+        # Переход в состояние ожидания названия бота
+        bot.register_next_step_handler(call.message, ask_bot_name)
+
+# Обработчик ввода названия бота
+def ask_bot_name(message):
+    user_id = str(message.from_user.id)
+    bot_name = message.text
+
+    if user_id in users:
+        users[user_id]["bot_name"] = bot_name
+
+        # Отправляем пользователю предложение оплатить
+        markup = InlineKeyboardMarkup()
+        markup.add(InlineKeyboardButton(text="💳 Оплатить создание", callback_data="pay_create_bot"))
+        markup.add(InlineKeyboardButton(text="🔙 Отмена", callback_data="main_menu"))
+
+        bot.send_message(message.chat.id, f"Бот *{bot_name}* готов к созданию.\nЦена: 22.80 USDT", parse_mode="Markdown", reply_markup=markup)
 # Обработчик кнопки "Профиль"
 @bot.callback_query_handler(func=lambda call: call.data == "profile")
 def profile_callback(call: CallbackQuery):
