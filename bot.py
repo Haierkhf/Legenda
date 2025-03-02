@@ -7,8 +7,26 @@ from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQu
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 import logging
+import os
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+# Создаем папку для логов, если она не существует
+if not os.path.exists('logs'):
+    os.makedirs('logs')
+
+# Настроим логирование в файл и консоль
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('logs/bot_log.log'),  # Путь к файлу лога
+        logging.StreamHandler()  # Дополнительно выводим логи в консоль
+    ]
+)
+
+# Пример логирования
+logging.info("Бот запущен.")
+
+# Далее идет ваш код бота
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
