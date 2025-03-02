@@ -284,14 +284,14 @@ def create_bot_callback(call: CallbackQuery):
         "create_booking_bot": "📅 Бронирование услуг"
     }
 
-    if bot_type in bot_type_names:
-        bot.send_message(call.message.chat.id, f"Вы выбрали {bot_type_names[bot_type]}.\n\nВведите название для нового бота:")
+if bot_type in bot_type_names:
+    bot.send_message(call.message.chat.id, f"Вы выбрали {bot_type_names[bot_type]}.\n\nВведите название для нового бота:")
 
-        # Сохраняем выбранный тип бота
-        users[user_id] = {"selected_bot_type": bot_type}
+    # Сохраняем выбранный тип бота
+    users[user_id] = {"selected_bot_type": bot_type}
 
-        # Переход в состояние ожидания названия бота
-        bot.register_next_step_handler(call.message, ask_bot_name)
+    # Переход в состояние ожидания названия бота
+    bot.register_next_step_handler(call.message, ask_bot_name)
 
 # Обработчик кнопки "Создать бота"
 @bot.callback_query_handler(func=lambda call: call.data == "create_bot")
