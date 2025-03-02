@@ -10,12 +10,9 @@ from fastapi import FastAPI, Request
 # Загрузка переменных окружения
 load_dotenv()
 
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-CRYPTOBOT_API_KEY = os.getenv("CRYPTOBOT_API_KEY")
-
-# Проверяем наличие токенов
-if not TELEGRAM_BOT_TOKEN or not CRYPTOBOT_API_KEY:
-    raise ValueError("Необходимо указать TELEGRAM_BOT_TOKEN и CRYPTOBOT_API_KEY в .env файле!")
+TELEGRAM_BOT_TOKEN = os.getenv("7756038660:AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo")
+CRYPTOBOT_API_KEY = os.getenv("347583:AA2FTH9et0kfdviBIOv9RfeDPUYq5HAcbRj")
+ADMIN_ID = os.getenv("6402443549")  # ID, куда отправлять информацию о новых ботах
 
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 app = FastAPI()
@@ -36,11 +33,11 @@ logging.basicConfig(
 # Файл пользователей
 USERS_FILE = "users.json"
 
-# Инициализация users.json, если его нет
 if not os.path.exists(USERS_FILE):
     with open(USERS_FILE, "w", encoding="utf-8") as f:
         json.dump({}, f, indent=4)
-        # Функция загрузки пользователей
+
+pending_payments = {}  # Список ожидающих оплат пользователей 
 def load_users():
     try:
         with open(USERS_FILE, "r", encoding="utf-8") as f:
@@ -48,12 +45,10 @@ def load_users():
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
 
-# Функция сохранения пользователей
 def save_users(users):
     with open(USERS_FILE, "w", encoding="utf-8") as f:
         json.dump(users, f, indent=4, ensure_ascii=False)
 
-# Функция обновления баланса пользователя
 def update_balance(user_id, amount):
     users = load_users()
     if user_id in users:
@@ -102,61 +97,82 @@ def start_handler(message):
 
 @bot.callback_query_handler(func=lambda call: call.data == "create_bot")
 def create_bot_callback(call: CallbackQuery):
+    bot.edit_message_text("Выберите тип бота для создания:", call.message.chat.id, call.message.message_id, reply_markup=create_bot_menu())
+    @bot.callback_query_handler(func=lambda call: call.data.startswith('create_'))
+def create_bot_type_callback(call: CallbackQuery):
     user_id = str(call.from_user.id)
+    bot_type = call.data
+
     users = load_users()
-    
-    if user_id in users:
-        user_balance = users[user_id].get("balance", 0)
-        payment_amount = 22.80
+    users[user_id] = {"selected_bot_type": bot_type, "state": "waiting_for_name"}
+    save_users(users)
 
-        if user_balance >= payment_amount:
-            users[user_id]["balance"] -= payment_amount
-            save_users(users)
+    bot.send_message(call.message.chat.id, "Введите название для нового бота:")
+    bot.register_next_step_handler(call.message, process_bot_name)
 
-            bot.send_message(call.message.chat.id, f"✅ Оплата прошла успешно! Новый баланс: {users[user_id]['balance']} USDT.")
-            bot.edit_message_text("Выберите тип бота для создания:", call.message.chat.id, call.message.message_id, reply_markup=create_bot_menu())
-        else:
-            markup = InlineKeyboardMarkup()
-            markup.add(InlineKeyboardButton("💳 Оплатить создание бота", callback_data="pay_create_bot"))
-            bot.send_message(call.message.chat.id, f"❌ У вас недостаточно средств. Пополните баланс.", reply_markup=markup)
+def process_bot_name(message):
+    user_id = str(message.from_user.id)
+    bot_name = message.text
+
+    users = load_users()
+    users[user_id]["bot_name"] = bot_name
+    save_users(users)
+
+    price = 22.80  # Цена создания бота
+    user_balance = users[user_id].get("balance", 0)
+
+    if user_balance >= price:
+        users[user_id]["balance"] -= price
+        save_users(users)
+        finalize_bot_creation(user_id, message.chat.id)
     else:
-        bot.send_message(call.message.chat.id, "⚠️ Вы не зарегистрированы в системе.")
-        @bot.callback_query_handler(func=lambda call: call.data == "pay_create_bot")
-def pay_create_bot_callback(call: CallbackQuery):
-    user_id = str(call.from_user.id)
+        send_payment_link(user_id, message.chat.id, price)
 
-    amount_usd = 22.80
+def send_payment_link(user_id, chat_id, price):
     try:
         response = requests.post(
             "https://pay.crypt.bot/api/createInvoice",
-            json={"asset": "USDT", "currency": "USD", "amount": amount_usd},
+            json={"asset": "USDT", "currency": "USD", "amount": price},
             headers={"Crypto-Pay-API-Token": CRYPTOBOT_API_KEY},
         )
+
         if response.ok:
             data = response.json()
             if "result" in data:
                 pay_url = data["result"]["pay_url"]
-                bot.send_message(call.message.chat.id, f"Оплатите по ссылке: {pay_url}")
+                pending_payments[user_id] = data["result"]["invoice_id"]
+                bot.send_message(chat_id, f"Оплатите по ссылке: {pay_url}")
         else:
-            bot.send_message(call.message.chat.id, "Ошибка при создании платежа.")
+            bot.send_message(chat_id, "Ошибка при создании платежа.")
     except Exception as e:
         logging.error(f"Ошибка при создании счета: {e}")
-        bot.send_message(call.message.chat.id, "Ошибка при обработке платежа.")
-        @bot.callback_query_handler(func=lambda call: call.data == "profile")
-def profile_callback(call: CallbackQuery):
-    user_id = str(call.from_user.id)
+        bot.send_message(chat_id, "Ошибка при обработке платежа.")
+
+def finalize_bot_creation(user_id, chat_id):
     users = load_users()
+    bot_type = users[user_id]["selected_bot_type"]
+    bot_name = users[user_id]["bot_name"]
 
-    if user_id in users:
-        username = users[user_id].get("username", "Не указан")
-        balance = users[user_id].get("balance", 0)
-        response = f"👤 Ваш профиль:\n🔹 Имя пользователя: @{username}\n💰 Баланс: {balance} USDT"
-    else:
-        response = "⚠️ Вы не зарегистрированы в системе."
+    # Отправляем информацию админу
+    bot.send_message(ADMIN_ID, f"❗ Новый бот создан!\n👤 Пользователь: {user_id}\n📌 Тип: {bot_type}\n📝 Название: {bot_name}")
 
-    bot.send_message(call.message.chat.id, response)
+    bot.send_message(chat_id, "✅ Ваш бот успешно создан!")
+    users[user_id]["state"] = "none"
+    save_users(users)
+    @app.post("/cryptobot_webhook")
+async def cryptobot_webhook(request: Request):
+    data = await request.json()
+    logging.info(f"Webhook received: {data}")
 
-if __name__ == "__main__":
-    logging.info("Бот запущен.")
+    if "invoice_id" in data and data.get("status") == "paid":
+        invoice_id = data["invoice_id"]
+        user_id = next((uid for uid, inv_id in pending_payments.items() if inv_id == invoice_id), None)
+
+        if user_id:
+            update_balance(user_id, float(data["amount"]))
+            finalize_bot_creation(user_id, user_id)  # Завершаем создание бота
+            del pending_payments[user_id]
+    return {"status": "ok"}
+    if __name__ == "__main__":
+    logging.info("Бот запущен и готов к работе.")
     bot.polling(none_stop=True)
-    
