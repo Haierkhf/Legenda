@@ -150,12 +150,65 @@ def ask_bot_name(message):
     if user_id in users:
         users[user_id]["bot_name"] = bot_name
 
-        # Отправляем пользователю предложение оплатить
-        markup = InlineKeyboardMarkup()
-        markup.add(InlineKeyboardButton(text="💳 Оплатить создание", callback_data="pay_create_bot"))
-        markup.add(InlineKeyboardButton(text="🔙 Отмена", callback_data="main_menu"))
+        # обработчик кнопки для создания бота и проверки баланса
+@bot.callback_query_handler(func=lambda call: call.data == "create_bot")
+def create_bot_callback(call: CallbackQuery):
+    user_id = str(call.from_user.id)
+    users = load_users()  # Загружаем пользователей
 
-        bot.send_message(message.chat.id, f"Бот *{bot_name}* готов к созданию.\nЦена: 22.80 USDT", parse_mode="Markdown", reply_markup=markup)
+    if user_id in users:
+        user_balance = users[user_id].get("balance", 0)
+        payment_amount = 22.80  # Стоимость создания бота
+
+        # Проверка наличия средств
+        if user_balance >= payment_amount:
+            # Уменьшаем баланс пользователя
+            new_balance = user_balance - payment_amount
+            users[user_id]["balance"] = new_balance
+            save_users(users)
+
+            # Отправляем пользователю сообщение о успешной оплате
+            bot.send_message(call.message.chat.id, f"✅ Оплата прошла успешно! Новый баланс: {new_balance} USDT.")
+            bot.send_message(call.message.chat.id, "Ваш бот успешно создан!")
+            
+            # Логика создания бота...
+        else:
+            # Если средств недостаточно, отправляем чек на оплату
+            bot.send_message(call.message.chat.id, f"❌ У вас недостаточно средств для создания бота. Пожалуйста, оплатите {payment_amount} USDT.")
+            
+            # Отправляем кнопку для оплаты
+            markup = InlineKeyboardMarkup()
+            markup.add(InlineKeyboardButton("💳 Оплатить создание бота", callback_data="pay_create_bot"))
+            bot.send_message(call.message.chat.id, "Для оплаты нажмите кнопку ниже:", reply_markup=markup)
+    else:
+        bot.send_message(call.message.chat.id, "⚠️ Вы не зарегистрированы в системе.")
+        
+# обработчик кнопки "Оплатить создание бота"
+@bot.callback_query_handler(func=lambda call: call.data == "pay_create_bot")
+def pay_create_bot_callback(call: CallbackQuery):
+    user_id = str(call.from_user.id)
+    users = load_users()  # Загружаем пользователей
+
+    if user_id in users:
+        user_balance = users[user_id].get("balance", 0)
+        payment_amount = 22.80  # Стоимость создания бота
+
+        # Проверка наличия средств
+        if user_balance >= payment_amount:
+            # Уменьшаем баланс пользователя
+            new_balance = user_balance - payment_amount
+            users[user_id]["balance"] = new_balance
+            save_users(users)
+
+            # Отправляем пользователю сообщение о успешной оплате
+            bot.send_message(call.message.chat.id, f"✅ Оплата прошла успешно! Новый баланс: {new_balance} USDT.")
+            bot.send_message(call.message.chat.id, "Ваш бот успешно создан!")
+            
+            # Логика создания бота...
+        else:
+            bot.send_message(call.message.chat.id, f"❌ У вас недостаточно средств для создания бота. Баланс: {user_balance} USDT. Необходимая сумма: {payment_amount} USDT.")
+    else:
+        bot.send_message(call.message.chat.id, "⚠️ Вы не зарегистрированы в системе.")
 # Функция для экранирования символов Markdown
 def escape_markdown(text):
     return text.replace("*", "\\*").replace("_", "\\_").replace("[", "\").replace("]", "\").replace("(", "\").replace(")", "\").replace("~", "\\~").replace("`", "\\`")
