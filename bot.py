@@ -147,6 +147,30 @@ def profile_callback(call: CallbackQuery):
         logger.error(f"Ошибка при обработке профиля для пользователя {user_id}: {e}")
         bot.answer_callback_query(call.id, "Произошла ошибка при обработке вашего профиля.")
         bot.send_message(call.message.chat.id, "Произошла ошибка. Попробуйте позже.")
+        import json
+import logging
+
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
+
+# Путь к файлу с пользователями
+USERS_FILE = "users.json"
+
+# Функция для загрузки пользователей из файла
+def load_users():
+    try:
+        with open(USERS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        logger.error("Файл users.json не найден.")
+        return {}  # Если файл не найден, возвращаем пустой словарь
+    except json.JSONDecodeError:
+        logger.error("Ошибка при разборе JSON в файле users.json.")
+        return {}  # Если JSON невалиден, возвращаем пустой словарь
+    except Exception as e:
+        logger.error(f"Неизвестная ошибка при загрузке файла users.json: {e}")
+        return {}  # В случае других ошибок, также возвращаем пустой словарь
     bot.answer_callback_query(call.id)
     bot.send_message(call.message.chat.id, response, parse_mode="Markdown")
 @bot.callback_query_handler(func=lambda call: call.data == "info")
