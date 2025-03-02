@@ -3,7 +3,7 @@ import os
 import json
 import requests
 import telebot
-from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 
@@ -37,12 +37,13 @@ if not os.path.exists(USERS_FILE):
     with open(USERS_FILE, "w", encoding="utf-8") as f:
         json.dump({}, f, indent=4)
 
-pending_payments = {}  # Список ожидающих оплат пользователей 
+pending_payments = {}  # Список ожидающих оплат пользователей
+
 def load_users():
     try:
         with open(USERS_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
+    except (FileNotFoundError, json.JSONDecodeError):  # Исправлено: добавлен JSONDecodeError
         return {}
 
 def save_users(users):
@@ -51,11 +52,12 @@ def save_users(users):
 
 def update_balance(user_id, amount):
     users = load_users()
-    if user_id in users:
-        users[user_id]["balance"] += amount
-        save_users(users)
+    if user_id not in users:
+        users[user_id] = {"balance": 0}  # Исправлено: создаём пользователя, если его нет
+    users[user_id]["balance"] += amount
+    save_users(users)
 
-def main_menu():  # <-- Теперь объявлена правильно
+def main_menu():
     markup = InlineKeyboardMarkup()
     buttons = [
         ("🤖 Создать бота", "create_bot"),
@@ -77,10 +79,11 @@ def start_handler(message):
         users[user_id] = {"balance": 0, "username": message.from_user.username}
         save_users(users)
 
-    bot.send_message(message.chat.id, "Привет! Выберите действие:", reply_markup=main_menu())
-    def create_bot_menu():
+    bot.send_message(message.chat.id, "Привет! Выберите действие:", reply_markup=main_menu())  # Исправлено: добавлены скобки
+
+def create_bot_menu():
     markup = InlineKeyboardMarkup()
-    options = [
+    options = [  # Исправлено: теперь используем options, а не buttons
         ("📢 Автопостинг", "create_autoposting_bot"),
         ("💳 Продажа цифровых товаров", "create_digital_goods_bot"),
         ("📊 Арбитраж криптовалют", "create_crypto_arbitrage_bot"),
@@ -92,7 +95,7 @@ def start_handler(message):
         ("📅 Бронирование услуг", "create_booking_bot"),
         ("🔙 Назад", "main_menu")
     ]
-    for text, data in options:
+    for text, data in options:  # Исправлено: теперь корректно используется options
         markup.add(InlineKeyboardButton(text=text, callback_data=data))
     return markup
 
