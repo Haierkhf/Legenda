@@ -77,7 +77,9 @@ def start_handler(message):
     users = load_users()
 
     if user_id not in users:
-        users[user_id] = {"balance": 0, "username": message.from_user.username}
+    users[user_id] = {"balance": 0, "username": message.from_user.username, "chat_id": message.chat.id}
+else:
+    users[user_id]["chat_id"] = message.chat.id  # Если пользователь уже есть, обновляем chat_id
         save_users(users)
 
     bot.send_message(message.chat.id, "Привет! Выберите действие:", reply_markup=main_menu())  # Исправлено: добавлены скобки
@@ -159,24 +161,7 @@ def process_bot_name(message):
         finalize_bot_creation(user_id, message.chat.id)  # Завершаем создание бота
     else:
         send_payment_link(user_id, message.chat.id, price)  # Отправляем ссылку на оплату
-    try:
-        response = requests.post(
-            "https://pay.crypt.bot/api/createInvoice",
-            json={"asset": "USDT", "currency": "USD", "amount": price},
-            headers={"Crypto-Pay-API-Token": CRYPTOBOT_API_KEY},
-        )
-
-        if response.ok:
-            data = response.json()
-            if "result" in data:
-                pay_url = data["result"]["pay_url"]
-                pending_payments[user_id] = data["result"]["invoice_id"]
-                bot.send_message(chat_id, f"Оплатите по ссылке: {pay_url}")
-        else:
-            bot.send_message(chat_id, "Ошибка при создании платежа.")
-    except Exception as e:
-        logging.error(f"Ошибка при создании счета: {e}")
-        bot.send_message(chat_id, "Ошибка при обработке платежа.")
+    
 
 def finalize_bot_creation(user_id, chat_id):
     users = load_users()
@@ -200,7 +185,7 @@ async def cryptobot_webhook(request: Request):
 
         if user_id:
             update_balance(user_id, float(data["amount"]))
-            finalize_bot_creation(user_id, user_id)  # Завершаем создание бота
+            finalize_bot_creation(user_id, users[user_id]["chat_id"])
             del pending_payments[user_id]
     return {"status": "ok"}
     
