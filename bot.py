@@ -200,10 +200,31 @@ def create_bot_callback(call: CallbackQuery):
             save_users(users)
 
             # Отправляем пользователю сообщение о успешной оплате
+# Обработчик кнопки "Создать бота"
+@bot.callback_query_handler(func=lambda call: call.data == "create_bot")
+def create_bot_callback(call: CallbackQuery):
+    user_id = str(call.from_user.id)
+    users = load_users()  # Загружаем пользователей
+
+    if user_id in users:
+        user_balance = users[user_id].get("balance", 0)
+        payment_amount = 22.80  # Стоимость создания бота
+
+        # Проверка наличия средств
+        if user_balance >= payment_amount:
+            # Уменьшаем баланс пользователя
+            new_balance = user_balance - payment_amount
+            users[user_id]["balance"] = new_balance
+            save_users(users)
+
+            # Отправляем пользователю сообщение о успешной оплате
             bot.send_message(call.message.chat.id, f"✅ Оплата прошла успешно! Новый баланс: {new_balance} USDT.")
             bot.send_message(call.message.chat.id, "Ваш бот успешно создан!")
             
             # Логика создания бота...
+            bot.send_message(call.message.chat.id, "Теперь выберите тип бота для создания:")
+            bot.edit_message_text("Выберите тип бота для создания:", call.message.chat.id, call.message.message_id, reply_markup=create_bot_menu())
+            
         else:
             # Если средств недостаточно, отправляем чек на оплату
             bot.send_message(call.message.chat.id, f"❌ У вас недостаточно средств для создания бота. Пожалуйста, оплатите {payment_amount} USDT.")
@@ -214,7 +235,7 @@ def create_bot_callback(call: CallbackQuery):
             bot.send_message(call.message.chat.id, "Для оплаты нажмите кнопку ниже:", reply_markup=markup)
     else:
         bot.send_message(call.message.chat.id, "⚠️ Вы не зарегистрированы в системе.")
-        
+
 # обработчик кнопки "Оплатить создание бота"
 @bot.callback_query_handler(func=lambda call: call.data == "pay_create_bot")
 def pay_create_bot_callback(call: CallbackQuery):
@@ -235,12 +256,80 @@ def pay_create_bot_callback(call: CallbackQuery):
             # Отправляем пользователю сообщение о успешной оплате
             bot.send_message(call.message.chat.id, f"✅ Оплата прошла успешно! Новый баланс: {new_balance} USDT.")
             bot.send_message(call.message.chat.id, "Ваш бот успешно создан!")
-            
+
             # Логика создания бота...
+            bot.send_message(call.message.chat.id, "Теперь выберите тип бота для создания:")
+            bot.edit_message_text("Выберите тип бота для создания:", call.message.chat.id, call.message.message_id, reply_markup=create_bot_menu())
+
         else:
             bot.send_message(call.message.chat.id, f"❌ У вас недостаточно средств для создания бота. Баланс: {user_balance} USDT. Необходимая сумма: {payment_amount} USDT.")
     else:
         bot.send_message(call.message.chat.id, "⚠️ Вы не зарегистрированы в системе.")
+
+# Обработчик выбора типа бота
+@bot.callback_query_handler(func=lambda call: call.data.startswith('create_'))
+def create_bot_callback(call: CallbackQuery):
+    user_id = str(call.from_user.id)
+    bot_type = call.data
+
+    bot_type_names = {
+        "create_autoposting_bot": "📢 Автопостинг",
+        "create_digital_goods_bot": "💳 Продажа цифровых товаров",
+        "create_crypto_arbitrage_bot": "📊 Арбитраж криптовалют",
+        "create_ai_image_bot": "🖼️ Генерация изображений AI",
+        "create_pdf_bot": "📝 Генерация PDF-документов",
+        "create_subscriptions_bot": "🔗 Продажа подписок",
+        "create_airdrop_bot": "🔍 Поиск airdrop'ов",
+        "create_proxy_bot": "🔒 Продажа VPN/прокси",
+        "create_booking_bot": "📅 Бронирование услуг"
+    }
+
+    if bot_type in bot_type_names:
+        # Просим ввести название для нового бота
+        bot.send_message(call.message.chat.id, f"Вы выбрали {bot_type_names[bot_type]}.\n\nВведите название для нового бота:")
+
+        # Сохраняем выбранный тип бота
+        users[user_id] = {"selected_bot_type": bot_type, "state": "waiting_for_name"}
+        
+        # Переход в состояние ожидания названия бота
+        bot.register_next_step_handler(call.message, ask_bot_name)
+
+# Обработчик ввода названия бота
+def ask_bot_name(message):
+    user_id = str(message.from_user.id)
+    bot_name = message.text
+
+    # Проверяем, что пользователь зарегистрирован в системе
+    if user_id in users and users[user_id].get("state") == "waiting_for_name":
+        # Сохраняем введенное название бота
+        users[user_id]["bot_name"] = bot_name
+        selected_bot_type = users[user_id]["selected_bot_type"]
+
+        # Получаем название типа бота
+        bot_type_names = {
+            "create_autoposting_bot": "📢 Автопостинг",
+            "create_digital_goods_bot": "💳 Продажа цифровых товаров",
+            "create_crypto_arbitrage_bot": "📊 Арбитраж криптовалют",
+            "create_ai_image_bot": "🖼️ Генерация изображений AI",
+            "create_pdf_bot": "📝 Генерация PDF-документов",
+            "create_subscriptions_bot": "🔗 Продажа подписок",
+            "create_airdrop_bot": "🔍 Поиск airdrop'ов",
+            "create_proxy_bot": "🔒 Продажа VPN/прокси",
+            "create_booking_bot": "📅 Бронирование услуг"
+        }
+
+        bot_type_name = bot_type_names.get(selected_bot_type, "Неизвестный тип")
+
+        # Подтверждаем создание бота
+        bot.send_message(message.chat.id, f"Вы успешно создали бота для типа: {bot_type_name}!\n\nНазвание вашего бота: {bot_name}")
+
+        # Сброс состояния
+        users[user_id]["state"] = "none"
+        users[user_id].pop("selected_bot_type", None)
+
+        # Можно добавить дальнейшую логику по созданию бота, например, создание аккаунта или базы данных для нового бота.
+    else:
+        bot.send_message(message.chat.id, "⚠️ Произошла ошибка. Попробуйте снова.")
 # Функция для экранирования символов Markdown
 def escape_markdown(text):
     return text.replace("*", "\\*").replace("_", "\\_").replace("[", "\").replace("]", "\").replace("(", "\").replace(")", "\").replace("~", "\\~").replace("`", "\\`")
