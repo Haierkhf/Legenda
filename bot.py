@@ -156,7 +156,11 @@ def ask_bot_name(message):
         markup.add(InlineKeyboardButton(text="🔙 Отмена", callback_data="main_menu"))
 
         bot.send_message(message.chat.id, f"Бот *{bot_name}* готов к созданию.\nЦена: 22.80 USDT", parse_mode="Markdown", reply_markup=markup)
-# обработчик кнопки "Профиль"
+# Функция для экранирования символов Markdown
+def escape_markdown(text):
+    return text.replace("*", "\\*").replace("_", "\\_").replace("[", "\").replace("]", "\").replace("(", "\").replace(")", "\").replace("~", "\\~").replace("`", "\\`")
+
+# Обработчик кнопки "Профиль"
 @bot.callback_query_handler(func=lambda call: call.data == "profile")
 def profile_callback(call: CallbackQuery):
     user_id = str(call.from_user.id)
@@ -165,11 +169,11 @@ def profile_callback(call: CallbackQuery):
         users = load_users()  # Загружаем пользователей из файла
 
         if user_id in users:
-            username = users[user_id].get("username", "Не указан")
+            username = escape_markdown(users[user_id].get("username", "Не указан"))
             balance = users[user_id].get("balance", 0)
 
             # Генерируем реферальную ссылку
-            ref_link = f"https://t.me/{bot.get_me().username}?start={user_id}"
+            ref_link = escape_markdown(f"https://t.me/{bot.get_me().username}?start={user_id}")
 
             response = (f"👤 *Ваш профиль:*\n\n"
                        f"🔹 *Имя пользователя:* @{username}\n"
@@ -185,8 +189,6 @@ def profile_callback(call: CallbackQuery):
         logger.error(f"Ошибка при обработке профиля для пользователя {user_id}: {e}")
         bot.answer_callback_query(call.id, "Произошла ошибка при обработке вашего профиля.")
         bot.send_message(call.message.chat.id, "Произошла ошибка. Попробуйте позже.")
-        import json
-import logging
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
