@@ -22,7 +22,25 @@ logging.basicConfig(
         logging.StreamHandler()  # Дополнительно выводим логи в консоль
     ]
 )
+import json
 
+USERS_FILE = 'users.json'  # Укажите путь к файлу пользователей (если в той же директории, то достаточно имени файла)
+
+# Функция для загрузки пользователей из файла
+def load_users():
+    try:
+        with open(USERS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}  # Если файл не найден или пустой, возвращаем пустой словарь
+
+# Функция для сохранения пользователей в файл
+def save_users(users):
+    with open(USERS_FILE, "w", encoding="utf-8") as f:
+        json.dump(users, f, indent=4, ensure_ascii=False)
+        import logging
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 # Пример логирования
 logging.info("Бот запущен.")
 
