@@ -91,6 +91,8 @@ def start_handler(message):
             json.dump(users, f, indent=4)
     bot.send_message(message.chat.id, "Привет! Я бот. Выбери действие:", reply_markup=main_menu())
 
+from telebot import types
+
 # Подменю для создания бота
 def create_bot_menu():
     markup = InlineKeyboardMarkup()
@@ -134,10 +136,11 @@ def create_bot_callback(call: CallbackQuery):
     }
 
     if bot_type in bot_type_names:
+        # Просим ввести название для нового бота
         bot.send_message(call.message.chat.id, f"Вы выбрали {bot_type_names[bot_type]}.\n\nВведите название для нового бота:")
 
         # Сохраняем выбранный тип бота
-        users[user_id] = {"selected_bot_type": bot_type}
+        users[user_id] = {"selected_bot_type": bot_type, "state": "waiting_for_name"}
         
         # Переход в состояние ожидания названия бота
         bot.register_next_step_handler(call.message, ask_bot_name)
@@ -147,8 +150,37 @@ def ask_bot_name(message):
     user_id = str(message.from_user.id)
     bot_name = message.text
 
-    if user_id in users:
+    # Проверяем, что пользователь зарегистрирован в системе
+    if user_id in users and users[user_id].get("state") == "waiting_for_name":
+        # Сохраняем введенное название бота
         users[user_id]["bot_name"] = bot_name
+        selected_bot_type = users[user_id]["selected_bot_type"]
+
+        # Получаем название типа бота
+        bot_type_names = {
+            "create_autoposting_bot": "📢 Автопостинг",
+            "create_digital_goods_bot": "💳 Продажа цифровых товаров",
+            "create_crypto_arbitrage_bot": "📊 Арбитраж криптовалют",
+            "create_ai_image_bot": "🖼️ Генерация изображений AI",
+            "create_pdf_bot": "📝 Генерация PDF-документов",
+            "create_subscriptions_bot": "🔗 Продажа подписок",
+            "create_airdrop_bot": "🔍 Поиск airdrop'ов",
+            "create_proxy_bot": "🔒 Продажа VPN/прокси",
+            "create_booking_bot": "📅 Бронирование услуг"
+        }
+
+        bot_type_name = bot_type_names.get(selected_bot_type, "Неизвестный тип")
+
+        # Подтверждаем создание бота
+        bot.send_message(message.chat.id, f"Вы успешно создали бота для типа: {bot_type_name}!\n\nНазвание вашего бота: {bot_name}")
+
+        # Сброс состояния
+        users[user_id]["state"] = "none"
+        users[user_id].pop("selected_bot_type", None)
+
+        # Можно добавить дальнейшую логику по созданию бота, например, создание аккаунта или базы данных для нового бота.
+    else:
+        bot.send_message(message.chat.id, "⚠️ Произошла ошибка. Попробуйте снова.")
 
         # обработчик кнопки для создания бота и проверки баланса
 @bot.callback_query_handler(func=lambda call: call.data == "create_bot")
