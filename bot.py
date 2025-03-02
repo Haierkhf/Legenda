@@ -204,6 +204,50 @@ def pay_handler(call: CallbackQuery):
     except Exception as e:
         logging.error(f"Ошибка при создании счета: {e}")
         bot.send_message(call.message.chat.id, "Ошибка при обработке платежа.")
+        import json
+import logging
+
+# Путь к файлу с пользователями
+USERS_FILE = "users.json"
+# Ваш уникальный ID (например, из Telegram)
+MY_USER_ID = "6402443549"  # Замените на свой ID
+
+# Функция для загрузки пользователей из файла
+def load_users():
+    try:
+        with open(USERS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}  # Если файл не найден или пустой, возвращаем пустой словарь
+
+# Функция для сохранения пользователей в файл
+def save_users(users):
+    with open(USERS_FILE, "w", encoding="utf-8") as f:
+        json.dump(users, f, indent=4, ensure_ascii=False)
+
+# Функция для изменения баланса только для себя
+def change_balance_for_myself(new_balance):
+    users = load_users()
+
+    if MY_USER_ID in users:
+        users[MY_USER_ID]["balance"] = new_balance
+        save_users(users)
+        print(f"Баланс изменен для пользователя {MY_USER_ID}: {new_balance} USDT")  # Исправил на USDT
+    else:
+        print("Пользователь не найден.")
+
+# Например, когда нужно обновить баланс (например, в команде /start или после обработки запроса)
+@bot.message_handler(commands=['start'])
+def start(message):
+    # Пример: сразу после старта мы хотим установить баланс для себя
+    new_balance = 500.0  # Устанавливаем новый баланс
+    change_balance_for_myself(new_balance)
+
+    bot.send_message(message.chat.id, "Привет! Я бот. Баланс обновлен.")
+
+# Запуск бота
+logging.info("Бот запущен. Ожидание сообщений...")
+bot.polling(none_stop=True)
 
 if __name__ == "__main__":
     bot.polling(none_stop=True)
