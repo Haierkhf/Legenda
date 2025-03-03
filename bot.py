@@ -62,22 +62,22 @@ def update_balance(user_id, amount):
     save_users(users)
 
 def main_menu():
-    markup = InlineKeyboardMarkup()
+    markup = types.InlineKeyboardMarkup()
     buttons = [
-        ("🤖 Создать бота", "create_bot"),
-        ("ℹ️ Информация", "info"),
-        ("💬 Отзывы", "https://t.me/nwf0L9BBCoJYl2Qy"),
-        ("👤 Профиль", "profile"),
-        ("🔒 Политика конфиденциальности", "privacy")
+        types.InlineKeyboardButton("🤖 Создать бота", callback_data="create_bot"),
+        types.InlineKeyboardButton("ℹ Информация", callback_data="info"),
+        types.InlineKeyboardButton("💬 Отзывы", url="https://t.me/nwf0L9BBCoJYl2Qy"),
+        types.InlineKeyboardButton("👤 Профиль", callback_data="profile"),
+        types.InlineKeyboardButton("🔒 Политика конфиденциальности", callback_data="privacy"),
     ]
-    for text, data in buttons:
-        markup.add(InlineKeyboardButton(text=text, callback_data=data))
+    markup.add(*buttons)
     return markup
+
 
 @bot.message_handler(commands=['start'])
 def start_handler(message):
-    user_id = str(message.from_user.id)
-    users = load_users()
+    user_id = message.from_user.id
+    users = load_users()  # Функция для загрузки пользователей из файла
 
     if user_id not in users:
         users[user_id] = {
@@ -88,8 +88,14 @@ def start_handler(message):
     else:
         users[user_id]["chat_id"] = message.chat.id  # Обновляем chat_id
 
-    save_users(users)  # Сохраняем обновленные данные
-    bot.send_message(message.chat.id, "Привет! Выберите действие:")
+    save_users(users)  # Функция для сохранения пользователей в файл
+
+    bot.send_message(
+        message.chat.id,
+        "Привет! Выберите действие:",
+        reply_markup=main_menu()
+    )
+
     
 def create_bot_menu():
     markup = InlineKeyboardMarkup()
