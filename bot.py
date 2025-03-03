@@ -78,11 +78,15 @@ def start_handler(message):
     users = load_users()
 
     if user_id not in users:
-        users[user_id] = {"balance": 0, "username": message.from_user.username, "chat_id": message.chat.id}
+        users[user_id] = {
+            "balance": 0,
+            "username": message.from_user.username,
+            "chat_id": message.chat.id
+        }
     else:
         users[user_id]["chat_id"] = message.chat.id  # Обновляем chat_id
 
-    save_users(users)  # Отступ исправлен
+    save_users(users)  # Сохраняем обновленные данные
     bot.send_message(message.chat.id, "Привет! Выберите действие:")
     
 def create_bot_menu():
