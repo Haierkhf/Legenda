@@ -103,7 +103,17 @@ def start_handler(message):
         reply_markup=main_menu()
     )
 
-    
+    @bot.callback_query_handler(func=lambda call: True)
+def callback_handler(call):
+    if call.data == "create_bot":
+        bot.send_message(call.message.chat.id, "Вы выбрали создать бота!")
+    elif call.data == "info":
+        bot.send_message(call.message.chat.id, "Здесь будет информация.")
+    elif call.data == "profile":
+        bot.send_message(call.message.chat.id, "Ваш профиль.")
+    elif call.data == "privacy":
+        bot.send_message(call.message.chat.id, "Политика конфиденциальности.")
+        
 def create_bot_menu():
     markup = InlineKeyboardMarkup()
     options = [
