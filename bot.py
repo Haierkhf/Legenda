@@ -4,10 +4,15 @@ import requests
 import telebot
 from telebot.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 
-# Загружаем переменные окружения из Railway
-TELEGRAM_BOT_TOKEN = os.getenv("BOT_TOKEN")
-CRYPTOPBOT_API_KEY = os.getenv("CRYPTOPBOT_API_KEY")
-ADMIN_ID = os.getenv("ADMIN_ID")
+# Загружаем переменные окружения
+TELEGRAM_BOT_TOKEN = os.environ.get("BOT_TOKEN")
+CRYPTOPBOT_API_KEY = os.environ.get("CRYPTOBOT_API_KEY")
+ADMIN_ID = os.environ.get("ADMIN_ID")
+
+# Выводим переменные окружения в логи для проверки
+print("BOT_TOKEN:", TELEGRAM_BOT_TOKEN)
+print("CRYPTOPBOT_API_KEY:", CRYPTOPBOT_API_KEY)
+print("ADMIN_ID:", ADMIN_ID)
 
 # Проверяем, загружены ли переменные окружения
 if not TELEGRAM_BOT_TOKEN:
