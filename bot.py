@@ -102,39 +102,39 @@ def start_handler(message):
     "Привет! Выберите действие:",
     reply_markup=main_menu()
 )
-# Функция для обработки профиля
+@bot.callback_query_handler(func=lambda call: call.data == "profile")
 def handle_profile(call):
-    user_id = call.from_user.id  # Получаем ID пользователя
+    user_id = call.message.chat.id  # Используем call.message
 
     try:
-        users = load_users()  # Загружаем пользователей из файла
+        users = load_users()
 
         if user_id in users:
-            username = users[user_id].get("username", "Не указан")
+            username = escape_markdown(users[user_id].get("username", "Не указан"))
             balance = users[user_id].get("balance", 0)
 
             # Генерируем реферальную ссылку
             bot_info = bot.get_me()
-            bot_username = bot_info.username if bot_info.username else "бот"  # Подстраховка
+            bot_username = bot_info.username
             ref_link = f"https://t.me/{bot_username}?start={user_id}"
 
             response = (
                 f"👤 *Ваш профиль:*\n\n"
-                f"🔹 *Имя пользователя:* @{escape_markdown(username)}\n"
+                f"🔹 *Имя пользователя:* @{username}\n"
                 f"💰 *Баланс:* {balance} USDT\n\n"
-                f"🔗 *Ваша реферальная ссылка:*\n{escape_markdown(ref_link)}"
+                f"🔗 *Ваша реферальная ссылка:*\n{ref_link}"
             )
         else:
             response = "⚠️ Вы не зарегистрированы в системе."
 
-        bot.answer_callback_query(call.id)  # Подтверждаем нажатие кнопки
+        bot.answer_callback_query(call.id)
         bot.send_message(call.message.chat.id, response, parse_mode="Markdown")
 
     except Exception as e:
-        logger.error(f"Ошибка при обработке профиля для пользователя {user_id}: {e}")
         bot.answer_callback_query(call.id, "Произошла ошибка при обработке вашего профиля.")
         bot.send_message(call.message.chat.id, "Произошла ошибка. Попробуйте позже.")
-# Перемещаем декоратор callback_handler на верхний уровень, без вложенности
+        print(f"Ошибка в handle_profile: {e}")
+        
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
     if call.data == "create_bot":
