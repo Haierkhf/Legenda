@@ -7,6 +7,12 @@ from telebot import types
 from telebot.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from flask import Flask, request
 
+users = {}  # Глобальный словарь пользователей
+
+def handle_user(user_id):
+    if user_id not in users:
+        users[user_id] = {"selected_bot_type": None, "state": "ожидание"}
+    
 app = Flask(__name__)
 
 # Загружаем переменные окружения
@@ -15,9 +21,9 @@ CRYPTOBOT_API_KEY = os.environ.get("CRYPTOBOT_API_KEY")
 ADMIN_ID = os.environ.get("ADMIN_ID")
 
 # Выводим переменные окружения в логи для проверки
-print("BOT_TOKEN:", TELEGRAM_BOT_TOKEN)
-print("CRYPTOBOT_API_KEY:", CRYPTOBOT_API_KEY)
-print("ADMIN_ID:", ADMIN_ID)
+print("BOT_TOKEN:", TELEGRAM_BOT_TOKEN if TELEGRAM_BOT_TOKEN else "НЕ НАЙДЕН!")
+print("CRYPTOBOT_API_KEY:", CRYPTOBOT_API_KEY if CRYPTOBOT_API_KEY else "НЕ НАЙДЕН!")
+print("ADMIN_ID:", ADMIN_ID if ADMIN_ID else "НЕ НАЙДЕН!")
 
 # Проверяем, загружены ли переменные окружения
 if not TELEGRAM_BOT_TOKEN:
@@ -134,34 +140,26 @@ def create_bot_type_callback(call: CallbackQuery):
     bot.register_next_step_handler(call.message, process_bot_name)
     
 # <-- Пустая строка перед новой функцией!
-import requests
 
-def send_payment_link(user_id, chat_id, цена):
+def send_payment_link(user_id, chat_id, amount):
     try:
         response = requests.post(
             "https://pay.crypt.bot/api/createInvoice",
-            json={"asset": "USDT", "currency": "USD", "amount": цена},
+            json={"asset": "USDT", "currency": "USD", "amount": amount},
             headers={"Crypto-Pay-API-Token": CRYPTOBOT_API_KEY},
         )
+
         data = response.json()
+        
         if "result" in data:
             pay_url = data["result"]["pay_url"]
             bot.send_message(chat_id, f"Оплатите по ссылке: {pay_url}")
-    except Exception as e:
-        bot.send_message(chat_id, f"Ошибка при создании платежа: {str(e)}")
-        
-
-        if response.ok:
-            data = response.json()
-            if "result" in data:
-                pay_url = data["result"]["pay_url"]
-                pending_payments[user_id] = data["result"]["invoice_id"]
-                bot.send_message(chat_id, f"Оплатите по ссылке: {pay_url}")
         else:
-            bot.send_message(chat_id, "Ошибка при создании платежа.")
+            bot.send_message(chat_id, "Ошибка: не удалось создать ссылку на оплату.")
+
     except Exception as e:
-        logging.error(f"Ошибка при создании счета: {e}")
-        bot.send_message(chat_id, "Ошибка при обработке платежа.")
+        print(f"Ошибка при создании платежа: {e}")
+        bot.send_message(chat_id, "Произошла ошибка при обработке платежа.")
 
 def process_bot_name(message):
     user_id = str(message.from_user.id)
