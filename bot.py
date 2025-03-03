@@ -8,10 +8,10 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 # Загружаем переменные из .env
 load_dotenv()
 
-# Теперь токены загружаются из .env
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-CRYPTOBOT_API_KEY = os.getenv("CRYPTOBOT_API_KEY")
-PROFILE_TOKEN = os.getenv("PROFILE_TOKEN")
+# Токены
+TELEGRAM_BOT_TOKEN = "7756038660:AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo"
+CRYPTOBOT_API_KEY = "347583:AA2FTH9et0kfdviBIOv9RfeDPUYq5HAcbRj"
+PROFILE_TOKEN = "6402443549"
 
 if not TELEGRAM_BOT_TOKEN:
     raise ValueError("Токен бота не найден! Проверь .env")
