@@ -211,4 +211,5 @@ def cryptobot_webhook():
     
 if __name__ == "__main__":
     logging.info("Бот запущен и готов к работе.")
+    bot.delete_webhook()
     bot.polling(none_stop=True)
