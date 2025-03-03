@@ -2,6 +2,7 @@ import os
 import json
 import requests
 import telebot
+from telebot.types import CallbackQuery
 from dotenv import load_dotenv
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
