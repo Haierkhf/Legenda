@@ -78,13 +78,13 @@ def start_handler(message):
     users = load_users()
 
     if user_id not in users:
-    users[user_id] = {"balance": 0, "username": message.from_user.username, "chat_id": message.chat.id}
-else:
-    users[user_id]["chat_id"] = message.chat.id  # Обновляем chat_id, если юзер уже есть
-save_users(users)  # Отступ исправлен
+        users[user_id] = {"balance": 0, "username": message.from_user.username, "chat_id": message.chat.id}
+    else:
+        users[user_id]["chat_id"] = message.chat.id  # Обновляем chat_id
 
-    bot.send_message(message.chat.id, "Привет! Выберите действие:", reply_markup=main_menu())  # Исправлено: добавлены скобки
-
+    save_users(users)  # Отступ исправлен
+    bot.send_message(message.chat.id, "Привет! Выберите действие:")
+    
 def create_bot_menu():
     markup = InlineKeyboardMarkup()
     options = [
