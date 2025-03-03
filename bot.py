@@ -2,9 +2,14 @@ import os
 import json
 import requests
 import telebot
-from telebot.types import CallbackQuery
+from telebot.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from dotenv import load_dotenv
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pathlib import Path
+
+# Проверяем наличие .env файла
+dotenv_path = Path(".env")
+if not dotenv_path.exists():
+    raise ValueError("Файл .env не найден! Убедись, что он загружен в Railway.")
 
 # Загружаем переменные из .env
 load_dotenv()
@@ -16,6 +21,7 @@ PROFILE_TOKEN = os.getenv("PROFILE_TOKEN")
 
 # Проверяем, загружены ли переменные
 if not TELEGRAM_BOT_TOKEN:
+    print("Ошибка: TELEGRAM_BOT_TOKEN пустой!")
     raise ValueError("Токен бота не найден! Проверь .env")
 
 if not CRYPTOBOT_API_KEY:
