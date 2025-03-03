@@ -3,33 +3,21 @@ import json
 import requests
 import telebot
 from telebot.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
-from dotenv import load_dotenv
-from pathlib import Path
 
-# Проверяем наличие .env файла
-dotenv_path = Path(".env")
-if not dotenv_path.exists():
-    raise ValueError("Файл .env не найден! Убедись, что он загружен в Railway.")
+# Загружаем переменные окружения из Railway
+TELEGRAM_BOT_TOKEN = os.getenv("BOT_TOKEN")
+CRYPTOPBOT_API_KEY = os.getenv("CRYPTOPBOT_API_KEY")
+ADMIN_ID = os.getenv("ADMIN_ID")
 
-# Загружаем переменные из .env
-load_dotenv()
-
-# Получаем токены из переменных окружения
-TELEGRAM_BOT_TOKEN = "7756038660:AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo"
-CRYPTOBOT_API_KEY = "347583:AA2FTH9et0kfdviBIOv9RfeDPUYq5HAcbRj"
-ADMIN_ID = 6402443549
-
-
-# Проверяем, загружены ли переменные
+# Проверяем, загружены ли переменные окружения
 if not TELEGRAM_BOT_TOKEN:
-    print("Ошибка: TELEGRAM_BOT_TOKEN пустой!")
-    raise ValueError("Токен бота не найден! Проверь .env")
+    raise ValueError("Ошибка: BOT_TOKEN пустой!")
 
-if not CRYPTOBOT_API_KEY:
-    raise ValueError("CRYPTOBOT_API_KEY не найден! Проверь .env")
+if not CRYPTOPBOT_API_KEY:
+    raise ValueError("Ошибка: CRYPTOPBOT_API_KEY не найден! Проверь переменные окружения.")
 
-if not PROFILE_TOKEN:
-    raise ValueError("PROFILE_TOKEN не найден! Проверь .env")
+if not ADMIN_ID:
+    raise ValueError("Ошибка: ADMIN_ID не найден! Проверь переменные окружения.")
 
 # Инициализируем бота
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
