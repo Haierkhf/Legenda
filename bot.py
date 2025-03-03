@@ -16,7 +16,7 @@ ADMIN_ID = os.environ.get("ADMIN_ID")
 
 # Выводим переменные окружения в логи для проверки
 print("BOT_TOKEN:", TELEGRAM_BOT_TOKEN)
-print("CRYPTOPBOT_API_KEY:", CRYPTOBOT_API_KEY)
+print("CRYPTOBOT_API_KEY:", CRYPTOBOT_API_KEY)
 print("ADMIN_ID:", ADMIN_ID)
 
 # Проверяем, загружены ли переменные окружения
