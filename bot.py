@@ -1,12 +1,9 @@
-import logging
 import os
 import json
 import requests
 import telebot
-from telebot.types import CallbackQuery
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 # Загружаем переменные из .env
 load_dotenv()
@@ -16,21 +13,13 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CRYPTOBOT_API_KEY = os.getenv("CRYPTOBOT_API_KEY")
 PROFILE_TOKEN = os.getenv("PROFILE_TOKEN")
 
+if not TELEGRAM_BOT_TOKEN:
+    raise ValueError("Токен бота не найден! Проверь .env")
+
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
-app = FastAPI()
 
 # Создание папки для логов
 os.makedirs('logs', exist_ok=True)
-
-# Настройка логирования
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler("logs/bot_log.log"),
-        logging.StreamHandler()
-    ]
-)
 
 # Файл пользователей
 USERS_FILE = "users.json"
