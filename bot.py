@@ -15,9 +15,10 @@ if not dotenv_path.exists():
 load_dotenv()
 
 # Получаем токены из переменных окружения
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-CRYPTOBOT_API_KEY = os.getenv("CRYPTOBOT_API_KEY")
-PROFILE_TOKEN = os.getenv("PROFILE_TOKEN")
+TELEGRAM_BOT_TOKEN = "7756038660:AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo"
+CRYPTOBOT_API_KEY = "347583:AA2FTH9et0kfdviBIOv9RfeDPUYq5HAcbRj"
+ADMIN_ID = "6402443549"
+
 
 # Проверяем, загружены ли переменные
 if not TELEGRAM_BOT_TOKEN:
