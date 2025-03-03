@@ -102,7 +102,7 @@ def start_handler(message):
     "Привет! Выберите действие:",
     reply_markup=main_menu()
 )
-Функция для обработки профиля
+# Функция для обработки профиля
 def handle_profile(call):
     user_id = call.from_user.id  # Получаем ID пользователя
 
