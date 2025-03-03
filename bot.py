@@ -107,7 +107,7 @@ def start_handler(message):
         "Привет! Добро пожаловать в бота! Выберите действие:",
         reply_markup=main_menu()
     )
-from telebot.util import escape_markdown  # Импорт для защиты Markdown в сообщениях
+from telebot.formatting import escape_markdown  # Импорт для защиты Markdown в сообщениях
 
 # Обработчик нажатий на кнопки
 @bot.callback_query_handler(func=lambda call: True)
