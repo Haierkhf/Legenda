@@ -23,7 +23,7 @@ print("ADMIN_ID:", ADMIN_ID)
 if not TELEGRAM_BOT_TOKEN:
     raise ValueError("Ошибка: BOT_TOKEN пустой!")
 
-if not CRYPTOPBOT_API_KEY:
+if not CRYPTOBOT_API_KEY:
     raise ValueError("Ошибка: CRYPTOBOT_API_KEY не найден! Проверь переменные окружения.")
 
 if not ADMIN_ID:
