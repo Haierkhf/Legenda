@@ -3,6 +3,9 @@ import json
 import requests
 import telebot
 from telebot.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from flask import Flask, request
+
+app = Flask(__name__)
 
 # Загружаем переменные окружения
 TELEGRAM_BOT_TOKEN = os.environ.get("BOT_TOKEN")
@@ -178,10 +181,15 @@ def finalize_bot_creation(user_id, chat_id):
     save_users(users)
 
 # <-- Вынес декоратор `@app.post` из функции!
+from flask import Flask, request
+
+app = Flask(__name__)
+
 @app.post("/cryptobot_webhook")
-async def cryptobot_webhook(request: Request):
-    data = await request.json()
-    logging.info(f"Webhook received: {data}")
+def cryptobot_webhook():
+    data = request.json
+    print("Получены данные от CryptoBot:", data)
+    return "OK", 200
 
     if "invoice_id" in data and data.get("status") == "paid":
         invoice_id = data["invoice_id"]
