@@ -98,12 +98,13 @@ def start_handler(message):
     save_users(users)  # Функция для сохранения пользователей в файл
 
     bot.send_message(
-        message.chat.id,
-        "Привет! Выберите действие:",
-        reply_markup=main_menu()
-    )
+    message.chat.id,
+    "Привет! Выберите действие:",
+    reply_markup=main_menu()
+)
 
-    @bot.callback_query_handler(func=lambda call: True)
+# Перемещаем декоратор callback_handler на верхний уровень, без вложенности
+@bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
     if call.data == "create_bot":
         bot.send_message(call.message.chat.id, "Вы выбрали создать бота!")
