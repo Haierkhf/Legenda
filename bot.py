@@ -3,6 +3,7 @@ import logging
 import json
 import requests
 import telebot
+from telebot import types
 from telebot.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from flask import Flask, request
 
