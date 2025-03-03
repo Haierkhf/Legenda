@@ -8,12 +8,13 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 
-# Загрузка переменных окружения
+# Загружаем переменные из .env
 load_dotenv()
 
-TELEGRAM_BOT_TOKEN = "7756038660:AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo"
-CRYPTOBOT_API_KEY = "347583:AA2FTH9et0kfdviBIOv9RfeDPUYq5HAcbRj"
-ADMIN_ID = "6402443549"  # ID, куда отправлять информацию о новых ботах
+# Теперь токены загружаются из .env
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CRYPTOBOT_API_KEY = os.getenv("CRYPTOBOT_API_KEY")
+PROFILE_TOKEN = os.getenv("PROFILE_TOKEN")
 
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 app = FastAPI()
