@@ -2,6 +2,7 @@ import logging
 import os
 import json
 import requests
+import threading
 import telebot
 from telebot.formatting import escape_markdown
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
