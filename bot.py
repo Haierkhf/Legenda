@@ -3,6 +3,7 @@ import os
 import json
 import requests
 import telebot
+from telebot.formatting import escape_markdown
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from flask import Flask, request
 
