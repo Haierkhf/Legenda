@@ -134,13 +134,22 @@ def create_bot_type_callback(call: CallbackQuery):
     bot.register_next_step_handler(call.message, process_bot_name)
     
 # <-- Пустая строка перед новой функцией!
-def send_payment_link(user_id, chat_id, price):
+import requests
+
+def send_payment_link(user_id, chat_id, цена):
     try:
         response = requests.post(
             "https://pay.crypt.bot/api/createInvoice",
-            json={"asset": "USDT", "currency": "USD", "amount": price},
+            json={"asset": "USDT", "currency": "USD", "amount": цена},
             headers={"Crypto-Pay-API-Token": CRYPTOBOT_API_KEY},
         )
+        data = response.json()
+        if "result" in data:
+            pay_url = data["result"]["pay_url"]
+            bot.send_message(chat_id, f"Оплатите по ссылке: {pay_url}")
+    except Exception as e:
+        bot.send_message(chat_id, f"Ошибка при создании платежа: {str(e)}")
+        
 
         if response.ok:
             data = response.json()
