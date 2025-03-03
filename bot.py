@@ -11,7 +11,7 @@ app = Flask(__name__)
 
 # Загружаем переменные окружения
 TELEGRAM_BOT_TOKEN = os.environ.get("BOT_TOKEN")
-CRYPTOPBOT_API_KEY = os.environ.get("CRYPTOBOT_API_KEY")
+CRYPTOBOT_API_KEY = os.environ.get("CRYPTOBOT_API_KEY")
 ADMIN_ID = os.environ.get("ADMIN_ID")
 
 # Выводим переменные окружения в логи для проверки
