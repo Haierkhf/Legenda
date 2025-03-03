@@ -17,7 +17,7 @@ load_dotenv()
 # Получаем токены из переменных окружения
 TELEGRAM_BOT_TOKEN = "7756038660:AAHgk4D2wRoC45mxg6v5zwMxNtowOyv0JLo"
 CRYPTOBOT_API_KEY = "347583:AA2FTH9et0kfdviBIOv9RfeDPUYq5HAcbRj"
-ADMIN_ID = "6402443549"
+ADMIN_ID = 6402443549
 
 
 # Проверяем, загружены ли переменные
