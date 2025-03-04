@@ -23,20 +23,29 @@ if not BOT_TOKEN or not CRYPTOBOT_API_KEY or not ADMIN_ID:
 ADMIN_ID = int(ADMIN_ID)
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# Файл пользователей
+# Файл хранения данных пользователей
 USERS_FILE = "users.json"
 
-# Функции загрузки и сохранения пользователей
-def load_users():
-    try:
-        with open(USERS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {}
+# Загружаем пользователей из файла (если он существует)
+if os.path.exists(USERS_FILE):
+    with open(USERS_FILE, "r", encoding="utf-8") as file:
+        users = json.load(file)
+else:
+    users = {}  # Если файла нет, создаем пустой словарь
 
-def save_users(users):
-    with open(USERS_FILE, "w", encoding="utf-8") as f:
-        json.dump(users, f, indent=4, ensure_ascii=False)
+def save_users():
+    """Функция автоматического сохранения users.json"""
+    with open(USERS_FILE, "w", encoding="utf-8") as file:
+        json.dump(users, file, indent=4, ensure_ascii=False)
+
+def update_user(user_id, key, value):
+    """Функция для обновления данных пользователя и автосохранения"""
+    if user_id not in users:
+        users[user_id] = {}
+    
+    users[user_id][key] = value
+    save_users()  # Автоматическое сохранение после обновления
+
 
 users = load_users()
 app = Flask(__name__)
