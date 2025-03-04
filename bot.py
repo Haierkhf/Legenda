@@ -4,6 +4,7 @@ import json
 import requests
 import threading
 import telebot
+from другой_файл import show_create_bot_menu
 from telebot.formatting import escape_markdown
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from flask import Flask, request
