@@ -148,7 +148,7 @@ def send_invoice(message):
     )
 
 def send_payment_link(user_id, chat_id, amount):
-    payment_url = f"https://pay.crypt.bot/?to=ВАШ_КОШЕЛЕК&amount={amount}&currency=USDT"
+    payment_url = f"https://pay.crypt.bot/?to=347583:AA2FTH9et0kfdviBIOv9RfeDPUYq5HAcbRj&amount={amount}&currency=USDT"
     bot.send_message(chat_id, f"Оплатите {amount} USDT по ссылке: {payment_url}")
 # Завершение создания бота после оплаты
 def finalize_bot_creation(user_id, chat_id):
