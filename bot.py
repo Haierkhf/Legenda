@@ -133,60 +133,17 @@ def check_user_balance(user_id, chat_id):
         send_payment_link(user_id, chat_id, missing_amount)
 
 # Создание счета через Crypto Bot API
-def create_invoice(user_id, amount):
-    data = {
-        "asset": "USDT",
-        "amount": amount,
-        "description": "Пополнение баланса",
-        "hidden_message": "Спасибо за оплату!",
-        "paid_btn_name": "openBot",
-        "payload": f"user_{user_id}",
-        "allow_comments": False,
-        "allow_anonymous": False
-    }
+@bot.message_handler(commands=['buy'])
+def send_invoice(message):
+    usdt_amount = 28.99  # Установленная сумма в USDT
+    invoice_link = f"{CRYPTO_BOT_URL}send_{usdt_amount}_USDT"
 
-    headers = {"Crypto-Pay-API-Token": CRYPTOBOT_API_KEY}
-    response = requests.post(CRYPTO_PAY_URL, json=data, headers=headers)
-
-    if response.status_code == 200:
-        return response.json()["result"]["pay_url"]
-    else:
-        print("Ошибка создания платежа:", response.text)
-        return None
-
-# Отправка ссылки на оплату
-def send_payment_link(user_id, chat_id, amount):
-    payment_url = create_invoice(user_id, amount)
-
-    if payment_url:
-        bot.send_message(
-            chat_id,
-            f"💳 Пополнение баланса: [Оплатить через CryptoBot]({payment_url})",
-            parse_mode="Markdown"
-        )
-    else:
-        bot.send_message(chat_id, "❌ Ошибка создания платежа. Попробуйте позже.")
-# Вебхук для обработки платежей CryptoBot
-@app.route("/cryptobot_webhook", methods=["POST"])
-def cryptobot_webhook():
-    data = request.json
-
-    if not data or "invoice_id" not in data or "status" not in data:
-        return {"status": "error", "message": "Неверные данные"}
-
-    user_id = data.get("payload")
-    if user_id and data["status"] == "paid":
-        amount = float(data.get("amount", 0))
-        users[user_id]["balance"] += amount
-        save_users(users)
-
-        bot.send_message(users[user_id]["chat_id"], f"✅ Оплата {amount} USDT получена, баланс пополнен!")
-
-        # Если пользователь ждал оплату, проверяем баланс
-        if users[user_id].get("state") == "waiting_for_payment":
-            check_user_balance(user_id, users[user_id]["chat_id"])
-
-    return {"status": "ok"}
+    bot.send_message(
+        message.chat.id,
+        f"💰 Оплата в USDT\n\nСумма: {usdt_amount} USDT\n\n[🔗 Оплатить]({invoice_link})",
+        parse_mode="Markdown",
+        disable_web_page_preview=True
+    )
 
 # Завершение создания бота после оплаты
 def finalize_bot_creation(user_id, chat_id):
