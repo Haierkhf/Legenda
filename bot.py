@@ -129,44 +129,100 @@ def process_bot_name(message):
     )
 
     check_user_balance(user_id, message.chat.id)
-# Проверка баланса перед созданием бота
-def check_user_balance(user_id, chat_id):
-    balance = users.get(user_id, {}).get("balance", 0)
+
+
+def create_invoice(user_id, amount, currency="USDT"):
+    """Создание платежного чека через API Crypto Bot"""
+    url = f"{CRYPTO_BOT_API_URL}/createInvoice"
+    headers = {"Crypto-Pay-API-Token": CRYPTO_BOT_TOKEN}
+    data = {
+        "asset": currency,
+        "amount": amount,
+        "description": f"Оплата создания бота для {user_id}",
+        "hidden_message": "Спасибо за оплату!",
+        "paid_btn_name": "viewItem",
+        "paid_btn_url": "https://t.me/ваш_бот",
+        "allow_comments": False,
+        "allow_anonymous": False
+    }
+    
+    response = requests.post(url, json=data, headers=headers)
+    result = response.json()
+
+    if result.get("ok"):
+        return result["result"]["pay_url"]  # Возвращаем ссылку на оплату
+    else:
+        return None
+
+def process_balance_and_payment(user_id, chat_id):
+    """Проверяет баланс и отправляет подтверждение или ссылку на оплату"""
+    balance = users.get(str(user_id), {}).get("balance", 0)
     bot_price = 29.99  # Стоимость создания бота
 
     if balance >= bot_price:
-        users[user_id]["balance"] -= bot_price
-        save_users(users)
-        finalize_bot_creation(user_id, chat_id)
+        # Если денег хватает, спрашиваем подтверждение
+        markup = InlineKeyboardMarkup()
+        markup.add(InlineKeyboardButton("✅ Подтвердить оплату", callback_data=f"confirm_payment_{user_id}"))
+        markup.add(InlineKeyboardButton("❌ Отменить", callback_data="cancel_payment"))
+
+        bot.send_message(chat_id, f"💰 У вас есть {balance} USDT.\n"
+                                  f"Создание бота стоит {bot_price} USDT.\n\n"
+                                  f"Вы действительно хотите оплатить?", reply_markup=markup)
     else:
+        # Если денег не хватает, отправляем кнопку для оплаты
         missing_amount = bot_price - balance
         bot.send_message(chat_id, f"❗ Недостаточно средств. Нужно еще {missing_amount} USDT.")
-        send_payment_link(user_id, chat_id, missing_amount)
+        send_payment_button(chat_id, missing_amount)
 
+@bot.callback_query_handler(func=lambda call: call.data.startswith("confirm_payment_"))
+def confirm_payment(call):
+    """Обработчик подтверждения оплаты"""
+    user_id = call.data.split("_")[-1]  # Получаем user_id из callback_data
+    chat_id = call.message.chat.id
 
-def send_payment_button(chat_id):
+    if str(user_id) in users:
+        bot_price = 29.99
+        users[str(user_id)]["balance"] -= bot_price  # Списываем деньги
+        save_users()
+
+        bot.send_message(chat_id, "✅ Оплата успешно подтверждена! Начинаем создание бота.")
+        finalize_bot_creation(user_id, chat_id)
+    else:
+        bot.send_message(chat_id, "⚠️ Ошибка: пользователь не найден.")
+
+@bot.callback_query_handler(func=lambda call: call.data == "cancel_payment")
+def cancel_payment(call):
+    """Обработчик отмены оплаты"""
+    bot.send_message(call.message.chat.id, "❌ Оплата отменена.")
+
+def send_payment_button(chat_id, amount):
     """Функция отправки кнопки для оплаты"""
     markup = InlineKeyboardMarkup()
-    markup.add(InlineKeyboardButton("💳 Оплатить создание бота", callback_data="pay_create_bot"))
+    markup.add(InlineKeyboardButton("💳 Оплатить создание бота", callback_data=f"pay_create_bot_{amount}"))
 
     bot.send_message(chat_id, "Для оплаты нажмите кнопку ниже:", reply_markup=markup)
 
-@bot.callback_query_handler(func=lambda call: call.data == "pay_create_bot")
+@bot.callback_query_handler(func=lambda call: call.data.startswith("pay_create_bot"))
 def process_payment(call):
     """Обработчик нажатия на кнопку оплаты"""
     user_id = call.from_user.id
+    chat_id = call.message.chat.id
 
-    if user_id not in users:
-        bot.send_message(call.message.chat.id, "⚠️ Вы не зарегистрированы в системе.")
+    if str(user_id) not in users:
+        bot.send_message(chat_id, "⚠️ Вы не зарегистрированы в системе.")
         return
 
-    amount = 29.99  # Цена создания бота в USDT
-    payment_url = f"https://pay.crypt.bot/?to=ВАШ_КОШЕЛЕК&amount={amount}&currency=USDT"
+    amount = float(call.data.split("_")[-1])  # Получаем сумму из callback_data
+    invoice_url = create_invoice(user_id, amount)
 
-    markup = InlineKeyboardMarkup()
-    markup.add(InlineKeyboardButton("🔗 Оплатить", url=payment_url))
+    if invoice_url:
+        markup = InlineKeyboardMarkup()
+        markup.add(InlineKeyboardButton("🔗 Оплатить", url=invoice_url))
 
-    bot.send_message(call.message.chat.id, f"💰 Для оплаты перейдите по ссылке:", reply_markup=markup)
+        bot.send_message(chat_id, "💰 Для оплаты перейдите по ссылке:", reply_markup=markup)
+    else:
+        bot.send_message(chat_id, "⚠️ Ошибка при создании платежного чека. Попробуйте позже.")
+        
 # Завершение создания бота после оплаты
 def finalize_bot_creation(user_id, chat_id):
     bot_name = users[user_id].get("bot_name", "Без имени")
