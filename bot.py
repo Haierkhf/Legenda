@@ -15,6 +15,11 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 CRYPTO_BOT_TOKEN = os.getenv("CRYPTO_BOT_TOKEN")
 ADMIN_ID = os.getenv("ADMIN_ID")
 
+print(f"BOT_TOKEN: {BOT_TOKEN}")
+print(f"CRYPTO_BOT_TOKEN: {CRYPTO_BOT_TOKEN}")
+print(f"ADMIN_ID: {ADMIN_ID}")
+
+
 if not BOT_TOKEN or not CRYPTO_BOT_TOKEN or not ADMIN_ID:
     logging.error("❌ Ошибка: Не найдены все нужные переменные окружения!")
     raise ValueError("BOT_TOKEN, CRYPTO_BOT_TOKEN или ADMIN_ID отсутствуют!")
