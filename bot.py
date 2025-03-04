@@ -1,38 +1,37 @@
 import os
 import json
-import re
 import logging
-import time
 import requests
 import telebot
-from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 from flask import Flask, request
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 
-# === Настройка логирования ===
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+# === Логирование ===
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler("bot.log", encoding="utf-8"),
+        logging.StreamHandler()
+    ]
+)
 
-# === Загрузка переменных окружения ===
+# === Загрузка переменных ===
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CRYPTO_BOT_TOKEN = os.getenv("CRYPTO_BOT_TOKEN")
 ADMIN_ID = os.getenv("ADMIN_ID")
-
-print(f"BOT_TOKEN: {BOT_TOKEN}")
-print(f"CRYPTO_BOT_TOKEN: {CRYPTO_BOT_TOKEN}")
-print(f"ADMIN_ID: {ADMIN_ID}")
-
+BOT_PRICE = 5  # Стоимость создания бота (USDT)
 
 if not BOT_TOKEN or not CRYPTO_BOT_TOKEN or not ADMIN_ID:
-    logging.error("❌ Ошибка: Не найдены все нужные переменные окружения!")
-    raise ValueError("BOT_TOKEN, CRYPTO_BOT_TOKEN или ADMIN_ID отсутствуют!")
+    raise ValueError("❌ Ошибка: не найдены необходимые переменные окружения!")
 
 ADMIN_ID = int(ADMIN_ID)
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# === Файл для хранения пользователей ===
+# === Файл пользователей ===
 USERS_FILE = "users.json"
-# === Функция загрузки пользователей ===
+
 def load_users():
-    """Загружает пользователей из файла users.json"""
     if os.path.exists(USERS_FILE):
         with open(USERS_FILE, "r", encoding="utf-8") as f:
             try:
@@ -42,390 +41,215 @@ def load_users():
                 return {}
     return {}
 
-# === Функция сохранения пользователей ===
 def save_users():
-    """Сохраняет данные пользователей в users.json"""
     with open(USERS_FILE, "w", encoding="utf-8") as f:
         json.dump(users, f, indent=4, ensure_ascii=False)
 
-# === Функция обновления данных пользователя ===
-def update_user(user_id, key, value):
-    """Обновляет данные пользователя и сразу сохраняет"""
-    if user_id not in users:
-        users[user_id] = {}
-    
-    users[user_id][key] = value
-    save_users()
-
-# === Загружаем пользователей при запуске ===
 users = load_users()
-# === Функция создания клавиатуры главного меню ===
+
+# === Главное меню ===
 def main_menu():
-    """Создаёт клавиатуру главного меню"""
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     markup.add(KeyboardButton("🤖 Создать бота"))
     markup.add(KeyboardButton("👤 Профиль"), KeyboardButton("ℹ️ Информация"))
-    markup.add(KeyboardButton("💬 Отзывы"))
     return markup
 
-# === Обработчик команды /start ===
 @bot.message_handler(commands=["start"])
 def start_handler(message):
-    """Обрабатывает команду /start и отправляет главное меню"""
     user_id = str(message.from_user.id)
-
-    # Если пользователь новый — добавляем в базу
     if user_id not in users:
-        users[user_id] = {
-            "balance": 0,
-            "username": message.from_user.username,
-            "chat_id": message.chat.id
-        }
+        users[user_id] = {"balance": 0, "username": message.from_user.username, "bots": []}
         save_users()
+    
+    logging.info(f"👤 Новый пользователь: {message.from_user.username} (ID: {user_id})")
+
+    bot.send_message(message.chat.id, "👋 Привет! Выберите действие:", reply_markup=main_menu())
+
+# === Логирование всех данных пользователей ===
+def log_user_action(user_id, action, data=None):
+    user_data = users.get(user_id, {})
+    username = user_data.get("username", "Неизвестный")
+    log_message = f"📌 Действие: {action} | Пользователь: {username} (ID: {user_id})"
+    if data:
+        log_message += f" | Данные: {data}"
+    
+    logging.info(log_message)
+
+# === Обновленный профиль ===
+@bot.message_handler(func=lambda message: message.text == "👤 Профиль")
+def profile_callback(message):
+    user_id = str(message.from_user.id)
+    
+    if user_id not in users:
+        bot.send_message(message.chat.id, "❌ Ошибка: ваш профиль не найден.")
+        return
+
+    username = users[user_id].get("username", "Не указан")
+    balance = users[user_id].get("balance", 0)
+    bots = users[user_id].get("bots", [])
+
+    bot_list = "\n".join([f"🤖 {bot['name']} – @{bot['username']}" for bot in bots]) if bots else "🚫 Нет созданных ботов"
 
     bot.send_message(
         message.chat.id,
-        "👋 Привет! Выберите действие:",
-        reply_markup=main_menu()
+        f"👤 *Ваш профиль:*\n\n"
+        f"🔹 *Имя пользователя:* @{username}\n"
+        f"💰 *Баланс:* {balance} USDT\n"
+        f"📜 *Ваши боты:*\n{bot_list}",
+        parse_mode="Markdown"
     )
 
-# === Обработчик кнопки "Информация" ===
-@bot.message_handler(func=lambda message: message.text == "ℹ️ Информация")
-def info_callback(message):
-    """Вывод информации о сервисе"""
-    info_text = (
-        "ℹ️ *Информация о сервисе:*\n\n"
-        "Наш бот предоставляет удобные инструменты для автоматизации:\n"
-        "- Автопостинг\n"
-        "- Продажа цифровых товаров\n"
-        "- Арбитраж криптовалют\n"
-        "- Генерация PDF и изображений AI\n"
-        "- Управление подписками\n\n"
-        "💰 *Как пополнить баланс?*\n"
-        "1. Нажмите кнопку 'Создать бота'.\n"
-        "2. Выберите нужный тип бота.\n"
-        "3. Следуйте инструкции по оплате.\n"
-        "4. После успешного платежа ваш баланс пополнится автоматически.\n\n"
-        "🔒 *Политика конфиденциальности:*\n"
-        "Мы уважаем вашу конфиденциальность и гарантируем защиту ваших данных."
-    )
-    bot.send_message(message.chat.id, info_text, parse_mode="Markdown")
+    log_user_action(user_id, "Просмотр профиля")
 
-# Функция экранирования Markdown
-def escape_markdown(text):
-    return re.sub(r'([_*[\]()~`>#+-=|{}.!])', r'\\\1', text)
-
-# Обработчик кнопки "Профиль"
-@bot.message_handler(func=lambda message: message.text == "👤 Профиль")
-def profile_callback(message):
-    """Выводит информацию о профиле пользователя"""
+# === Обновленный механизм проверки баланса и оплаты ===
+@bot.message_handler(func=lambda message: message.text == "🤖 Создать бота")
+def handle_create_bot(message):
     user_id = str(message.from_user.id)
 
     if user_id not in users:
         bot.send_message(message.chat.id, "❌ Ошибка: ваш профиль не найден.")
         return
 
-    username = users[user_id].get("username")
-    if not username:
-        username = "Не указан"
-    username = escape_markdown(username)  # Экранируем спецсимволы
-
     balance = users[user_id].get("balance", 0)
 
-    bot.send_message(
-        message.chat.id,
-        f"👤 *Ваш профиль:*\n\n"
-        f"🔹 *Имя пользователя:* @{username}\n"
-        f"💰 *Баланс:* {balance} USDT",
-        parse_mode="MarkdownV2"
-    )
+    if balance < BOT_PRICE:
+        payment_url = f"https://t.me/CryptoBot?start=PAYMENT_LINK"
+        bot.send_message(
+            message.chat.id,
+            f"❌ *Недостаточно средств!*\n\n"
+            f"Создание бота стоит *{BOT_PRICE} USDT*, а на вашем балансе *{balance} USDT*.\n"
+            f"👉 [Пополнить баланс]({payment_url})",
+            parse_mode="Markdown",
+            disable_web_page_preview=True
+        )
+        log_user_action(user_id, "Недостаточно средств", {"Баланс": balance})
+        return
 
-bot.polling()
+    markup = ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add(KeyboardButton("✅ Подтвердить"), KeyboardButton("❌ Отменить"))
     
-# === Обработчик кнопки "Отзывы" ===
-@bot.message_handler(func=lambda message: message.text == "💬 Отзывы")
-def reviews_callback(message):
-    """Отправляет ссылку на канал с отзывами"""
     bot.send_message(
         message.chat.id,
-        "💬 Вы можете оставить отзыв или прочитать мнения других пользователей здесь:\n\n"
-        "👉 [Перейти в группу отзывов](https://t.me/nWf0L9BBCoJlY2Qy)",
-        parse_mode="Markdown",
-        disable_web_page_preview=True
-    )
-    # === Функция клавиатуры для выбора типа бота ===
-def create_bot_menu():
-    """Создаёт меню выбора типа бота"""
-    markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    bot_types = [
-        "📢 Автопостинг", "💳 Продажа товаров", "📊 Арбитраж криптовалют",
-        "🖼️ Генерация изображений AI", "📝 Генерация PDF",
-        "🔗 Продажа подписок", "🔍 Поиск airdrop'ов", "🔒 Продажа VPN/прокси",
-        "📅 Бронирование услуг", "🔙 Назад"
-    ]
-    for name in bot_types:
-        markup.add(KeyboardButton(name))
-    return markup
-
-# === Обработчик кнопки "Создать бота" ===
-@bot.message_handler(func=lambda message: message.text == "🤖 Создать бота")
-def handle_create_bot(message):
-    """Запускает процесс выбора типа бота"""
-    bot.send_message(message.chat.id, "🔹 Выберите тип бота:", reply_markup=create_bot_menu())
-
-# === Обработчик выбора типа бота ===
-@bot.message_handler(func=lambda message: message.text in [
-    "📢 Автопостинг", "💳 Продажа товаров", "📊 Арбитраж криптовалют",
-    "🖼️ Генерация изображений AI", "📝 Генерация PDF",
-    "🔗 Продажа подписок", "🔍 Поиск airdrop'ов", "🔒 Продажа VPN/прокси",
-    "📅 Бронирование услуг"
-])
-def process_bot_type(message):
-    """Сохраняем тип бота и запрашиваем имя"""
-    user_id = str(message.from_user.id)
-
-    users[user_id]["selected_bot_type"] = message.text
-    users[user_id]["state"] = "waiting_for_bot_name"
-    save_users()
-
-    bot.send_message(message.chat.id, f"Вы выбрали: *{message.text}*\n\nВведите имя для вашего бота:", parse_mode="Markdown")
-
-
-    # === Обработчик ввода имени бота ===
-@bot.message_handler(func=lambda message: users.get(str(message.from_user.id), {}).get("state") == "waiting_for_bot_name")
-def process_bot_name(message):
-    """Сохраняем имя бота и предлагаем оплату"""
-    user_id = str(message.from_user.id)
-    users[user_id]["bot_name"] = message.text
-    users[user_id]["state"] = "waiting_for_payment"
-    save_users()
-
-    markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    markup.add(KeyboardButton("✅ Подтвердить оплату"), KeyboardButton("❌ Отмена"))
-
-    bot.send_message(
-        message.chat.id,
-        f"✅ Имя бота сохранено: *{message.text}*\n\n"
-        f"💰 Стоимость создания: *29.99 USDT*.\n\n"
-        f"Подтвердите оплату или отмените.",
+        f"⚠️ *Вы уверены, что хотите создать бота за {BOT_PRICE} USDT?*",
         reply_markup=markup,
         parse_mode="Markdown"
     )
-    # === Проверка баланса перед оплатой ===
-def check_balance_and_ask_payment(user_id, chat_id):
-    """Проверяет баланс пользователя и предлагает оплату"""
-    balance = users.get(user_id, {}).get("balance", 0)
-    bot_price = 29.99  # Цена создания бота
 
-    if balance >= bot_price:
-        # Если хватает денег, спрашиваем, хочет ли он оплатить из баланса
-        markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-        markup.add(KeyboardButton("✅ Оплатить с баланса"), KeyboardButton("❌ Отмена"))
+    users[user_id]["step"] = "confirm_payment"
+    save_users()
+    log_user_action(user_id, "Запрос на оплату")
 
-        bot.send_message(chat_id, f"💰 У вас есть {balance} USDT. Хотите оплатить создание бота за {bot_price} USDT?", reply_markup=markup)
-    else:
-        # Если не хватает, отправляем ссылку на оплату
-        missing_amount = bot_price - balance
-        bot.send_message(chat_id, f"❗ Недостаточно средств. Нужно ещё {missing_amount} USDT.")
-        send_payment_link(user_id, chat_id, missing_amount)
-
-# === Обработчик оплаты с баланса ===
-@bot.message_handler(func=lambda message: message.text in ["✅ Оплатить с баланса", "❌ Отмена"])
-def process_payment_choice(message):
-    """Обрабатывает выбор оплаты"""
+@bot.message_handler(func=lambda message: users.get(str(message.from_user.id), {}).get("step") == "confirm_payment")
+def confirm_payment(message):
     user_id = str(message.from_user.id)
-    chat_id = message.chat.id
 
-    if message.text == "✅ Оплатить с баланса":
-        bot_price = 29.99
+    if message.text == "❌ Отменить":
+        users[user_id]["step"] = None
+        save_users()
+        bot.send_message(message.chat.id, "🚫 Действие отменено.", reply_markup=main_menu())
+        log_user_action(user_id, "Отмена создания бота")
+        return
 
-        if users[user_id]["balance"] >= bot_price:
-            users[user_id]["balance"] -= bot_price
-            save_users()
-
-            bot.send_message(chat_id, "✅ Оплата успешна! Ваш бот создаётся...")
-            finalize_bot_creation(user_id, chat_id)
-        else:
-            bot.send_message(chat_id, "❗ Ошибка: Недостаточно средств.")
-    else:
-        bot.send_message(chat_id, "🚫 Оплата отменена.")
-
-# === Генерация чека через CryptoBot API ===
-def create_invoice(user_id, amount, currency="USDT"):
-    """Создаёт чек для оплаты через CryptoBot"""
-    url = "https://pay.crypt.bot/api/createInvoice"
-    headers = {"Crypto-Pay-API-Token": CRYPTO_BOT_TOKEN}
-    data = {
-        "asset": currency,
-        "amount": amount,
-        "description": f"Оплата создания бота для {user_id}",
-        "hidden_message": "Спасибо за оплату!",
-        "paid_btn_name": "viewItem",
-        "paid_btn_url": "https://t.me/ваш_бот",
-        "allow_comments": False,
-        "allow_anonymous": False,
-        "payload": user_id  # Передаём user_id для обработки платежа
-    }
-    
-    response = requests.post(url, json=data, headers=headers)
-    result = response.json()
-
-    if result.get("ok"):
-        return result["result"]["pay_url"]  # Возвращаем ссылку на оплату
-    else:
-        logging.error(f"❌ Ошибка при создании чека: {result}")
-        return None
-
-# === Функция отправки ссылки на оплату ===
-def send_payment_link(user_id, chat_id, amount):
-    """Генерирует и отправляет ссылку на оплату"""
-    invoice_url = create_invoice(user_id, amount)
-
-    if invoice_url:
-        markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-        markup.add(KeyboardButton("💳 Оплатить"))
-
-        bot.send_message(
-            chat_id,
-            f"💰 Для оплаты {amount} USDT перейдите по ссылке:\n\n[🔗 Оплатить]({invoice_url})",
-            parse_mode="Markdown",
-            reply_markup=markup
-        )
-    else:
-        bot.send_message(chat_id, "❌ Ошибка: не удалось создать чек для оплаты. Попробуйте позже.")
-        # === Вебхук для обработки платежей от CryptoBot ===
-app = Flask(__name__)
-
-@app.route("/cryptobot_webhook", methods=["POST"])
-
-    # === Проверка баланса перед оплатой ===
-def check_balance_and_ask_payment(user_id, chat_id):
-    """Проверяет баланс пользователя и предлагает оплату"""
-    balance = users.get(user_id, {}).get("balance", 0)
-    bot_price = 29.99  # Цена создания бота
-
-    if balance >= bot_price:
-        # Если хватает денег, спрашиваем, хочет ли он оплатить из баланса
-        markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-        markup.add(KeyboardButton("✅ Оплатить с баланса"), KeyboardButton("❌ Отмена"))
-
-        bot.send_message(chat_id, f"💰 У вас есть {balance} USDT. Хотите оплатить создание бота за {bot_price} USDT?", reply_markup=markup)
-    else:
-        # Если не хватает, отправляем ссылку на оплату
-        missing_amount = bot_price - balance
-        bot.send_message(chat_id, f"❗ Недостаточно средств. Нужно ещё {missing_amount} USDT.")
-        send_payment_link(user_id, chat_id, missing_amount)
-
-# === Обработчик оплаты с баланса ===
-@bot.message_handler(func=lambda message: message.text in ["✅ Оплатить с баланса", "❌ Отмена"])
-def process_payment_choice(message):
-    """Обрабатывает выбор оплаты"""
-    user_id = str(message.from_user.id)
-    chat_id = message.chat.id
-
-    if message.text == "✅ Оплатить с баланса":
-        bot_price = 29.99
-
-        if users[user_id]["balance"] >= bot_price:
-            users[user_id]["balance"] -= bot_price
-            save_users()
-
-            bot.send_message(chat_id, "✅ Оплата успешна! Ваш бот создаётся...")
-            finalize_bot_creation(user_id, chat_id)
-        else:
-            bot.send_message(chat_id, "❗ Ошибка: Недостаточно средств.")
-    else:
-        bot.send_message(chat_id, "🚫 Оплата отменена.")
-
-# === Генерация чека через CryptoBot API ===
-def create_invoice(user_id, amount, currency="USDT"):
-    """Создаёт чек для оплаты через CryptoBot"""
-    url = "https://pay.crypt.bot/api/createInvoice"
-    headers = {"Crypto-Pay-API-Token": CRYPTO_BOT_TOKEN}
-    data = {
-        "asset": currency,
-        "amount": amount,
-        "description": f"Оплата создания бота для {user_id}",
-        "hidden_message": "Спасибо за оплату!",
-        "paid_btn_name": "viewItem",
-        "paid_btn_url": "https://t.me/ваш_бот",
-        "allow_comments": False,
-        "allow_anonymous": False,
-        "payload": user_id  # Передаём user_id для обработки платежа
-    }
-    
-    response = requests.post(url, json=data, headers=headers)
-    result = response.json()
-
-    if result.get("ok"):
-        return result["result"]["pay_url"]  # Возвращаем ссылку на оплату
-    else:
-        logging.error(f"❌ Ошибка при создании чека: {result}")
-        return None
-
-# === Функция отправки ссылки на оплату ===
-def send_payment_link(user_id, chat_id, amount):
-    """Генерирует и отправляет ссылку на оплату"""
-    invoice_url = create_invoice(user_id, amount)
-
-    if invoice_url:
-        markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-        markup.add(KeyboardButton("💳 Оплатить"))
-
-        bot.send_message(
-            chat_id,
-            f"💰 Для оплаты {amount} USDT перейдите по ссылке:\n\n[🔗 Оплатить]({invoice_url})",
-            parse_mode="Markdown",
-            reply_markup=markup
-        )
-    else:
-        bot.send_message(chat_id, "❌ Ошибка: не удалось создать чек для оплаты. Попробуйте позже.")
-        # === Вебхук для обработки платежей от CryptoBot ===
-app = Flask(__name__)
-
-@app.route("/cryptobot_webhook", methods=["POST"])
-def cryptobot_webhook():
-    """Обрабатывает входящие платежи от CryptoBot"""
-    data = request.json
-
-    if not data or "invoice_id" not in data or "status" not in data:
-        return {"status": "error", "message": "Неверные данные"}
-
-    user_id = str(data.get("payload", ""))  # ID пользователя из payload
-
-    if not user_id or user_id not in users:
-        return {"status": "error", "message": "Пользователь не найден"}
-
-    amount = float(data.get("amount", 0))
-
-    if data["status"] == "paid":
-        users[user_id]["balance"] += amount
+    if message.text == "✅ Подтвердить":
+        users[user_id]["balance"] -= BOT_PRICE
+        users[user_id]["step"] = "choose_bot"
         save_users()
 
-        bot.send_message(users[user_id]["chat_id"], f"✅ Оплата {amount} USDT получена, ваш баланс пополнен!")
-        bot.send_message(ADMIN_ID, f"💰 Новый платеж от @{users[user_id].get('username', 'Неизвестно')} на сумму {amount} USDT")
+        bot.send_message(message.chat.id, "✅ Оплата прошла успешно! Выберите тип бота:", reply_markup=get_bot_catalog())
+        log_user_action(user_id, "Оплата подтверждена", {"Баланс после оплаты": users[user_id]["balance"]})
+        return
 
-        # Если пользователь ждал оплату, проверяем баланс снова
-        if users[user_id].get("state") == "waiting_for_payment":
-            check_balance_and_ask_payment(user_id, users[user_id]["chat_id"])
+    bot.send_message(message.chat.id, "❌ Ошибка: выберите '✅ Подтвердить' или '❌ Отменить'.")
+    
+# === Логирование ===
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler("deploy.log", encoding="utf-8"),
+        logging.StreamHandler()
+    ]
+)
 
-    return {"status": "ok"}
-    import time
+BASE_DIR = "user_bots"  # Папка для хранения всех ботов
+SUPERVISOR_CONF_DIR = "/etc/supervisor/conf.d"  # Директория конфигов Supervisor
+USERS_FILE = "users.json"
 
-def start_bot():
-    """Запуск бота с защитой от крашей"""
-    while True:
-        try:
-            print("✅ Бот запущен и работает!")
-            bot.polling(none_stop=True, interval=0, timeout=20)
-        except Exception as e:
-            logging.error(f"❌ Ошибка: {e}")
-            time.sleep(5)  # Перезапуск через 5 секунд в случае ошибки
+def load_users():
+    """Загружает пользователей из users.json"""
+    if os.path.exists(USERS_FILE):
+        with open(USERS_FILE, "r", encoding="utf-8") as f:
+            try:
+                return json.load(f)
+            except json.JSONDecodeError:
+                logging.warning("⚠ Ошибка чтения users.json. Создан новый файл.")
+                return {}
+    return {}
 
-if __name__ == "__main__":
-    if os.getenv("USE_WEBHOOK"):  
-        # Если используется вебхук, запускаем Flask-сервер
-        app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
-    else:
-        # Иначе запускаем бота в режиме polling
-        start_bot()
+def save_users(users):
+    """Сохраняет данные пользователей"""
+    with open(USERS_FILE, "w", encoding="utf-8") as f:
+        json.dump(users, f, indent=4, ensure_ascii=False)
+
+users = load_users()
+
+# === Шаблон кода для нового бота ===
+TEMPLATE_CODE = """import telebot
+
+BOT_TOKEN = "{bot_token}"
+bot = telebot.TeleBot(BOT_TOKEN)
+
+@bot.message_handler(commands=["start"])
+def start(message):
+    bot.send_message(message.chat.id, "🤖 Привет! Я твой новый бот!")
+
+bot.polling(none_stop=True)
+"""
+
+def create_and_run_bot(user_id, bot_data):
+    """Создаёт и запускает нового бота"""
+    bot_dir = os.path.join(BASE_DIR, f"user_{user_id}_bot")
+    
+    if not os.path.exists(bot_dir):
+        os.makedirs(bot_dir)
+
+    bot_file_path = os.path.join(bot_dir, "bot.py")
+
+    with open(bot_file_path, "w", encoding="utf-8") as f:
+        f.write(TEMPLATE_CODE.format(bot_token=bot_data["bot_token"]))
+
+    logging.info(f"✅ Бот создан: {bot_file_path}")
+
+    # Настройка Supervisor для автозапуска бота
+    supervisor_conf_path = os.path.join(SUPERVISOR_CONF_DIR, f"user_{user_id}_bot.conf")
+    supervisor_config = f"""[program:user_{user_id}_bot]
+command=python3 {bot_file_path}
+autostart=true
+autorestart=true
+stderr_logfile={bot_dir}/error.log
+stdout_logfile={bot_dir}/output.log
+"""
+
+    with open(supervisor_conf_path, "w", encoding="utf-8") as f:
+        f.write(supervisor_config)
+
+    # Перезапускаем Supervisor, чтобы он подхватил новый конфиг
+    subprocess.run("supervisorctl reread", shell=True, check=True)
+    subprocess.run("supervisorctl update", shell=True, check=True)
+    subprocess.run(f"supervisorctl start user_{user_id}_bot", shell=True, check=True)
+
+    logging.info(f"🚀 Бот для user_{user_id} запущен через Supervisor!")
+
+    # Сохранение информации о запущенном боте
+    users[user_id]["bots"].append({
+        "name": bot_data["bot_name"],
+        "username": get_bot_username(bot_data["bot_token"]),
+        "path": bot_file_path
+    })
+    save_users(users)
+
+def get_bot_username(bot_token):
+    """Получает username бота"""
+    url = f"https://api.telegram.org/bot{bot_token}/getMe"
+    response = requests.get(url).json()
+    return response["result"]["username"] if response.get("ok") else "unknown_bot"
