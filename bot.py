@@ -4,7 +4,6 @@ import json
 import requests
 import threading
 import telebot
-from другой_файл import show_create_bot_menu
 from telebot.formatting import escape_markdown
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from flask import Flask, request
@@ -191,8 +190,8 @@ def show_privacy_policy(chat_id):
         "📌 Используя этого бота, вы соглашаетесь с данной политикой."
     )
     bot.send_message(chat_id, text, parse_mode="Markdown")
-def create_bot_menu():
-    markup = InlineKeyboardMarkup()
+def show_create_bot_menu(chat_id):
+    bot.send_message(chat_id, "Меню создания бота")
     options = [
         ("📢 Автопостинг", "create_autoposting_bot"),
         ("💳 Продажа цифровых товаров", "create_digital_goods_bot"),
