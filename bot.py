@@ -210,6 +210,113 @@ def process_bot_name(message):
         reply_markup=markup,
         parse_mode="Markdown"
     )
+    # === Обработчик ввода имени бота ===
+@bot.message_handler(func=lambda message: users.get(str(message.from_user.id), {}).get("state") == "waiting_for_bot_name")
+def process_bot_name(message):
+    """Сохраняем имя бота и предлагаем оплату"""
+    user_id = str(message.from_user.id)
+    users[user_id]["bot_name"] = message.text
+    users[user_id]["state"] = "waiting_for_payment"
+    save_users()
+
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    markup.add(KeyboardButton("✅ Подтвердить оплату"), KeyboardButton("❌ Отмена"))
+
+    bot.send_message(
+        message.chat.id,
+        f"✅ Имя бота сохранено: *{message.text}*\n\n"
+        f"💰 Стоимость создания: *29.99 USDT*.\n\n"
+        f"Подтвердите оплату или отмените.",
+        reply_markup=markup,
+        parse_mode="Markdown"
+    )
+    # === Проверка баланса перед оплатой ===
+def check_balance_and_ask_payment(user_id, chat_id):
+    """Проверяет баланс пользователя и предлагает оплату"""
+    balance = users.get(user_id, {}).get("balance", 0)
+    bot_price = 29.99  # Цена создания бота
+
+    if balance >= bot_price:
+        # Если хватает денег, спрашиваем, хочет ли он оплатить из баланса
+        markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+        markup.add(KeyboardButton("✅ Оплатить с баланса"), KeyboardButton("❌ Отмена"))
+
+        bot.send_message(chat_id, f"💰 У вас есть {balance} USDT. Хотите оплатить создание бота за {bot_price} USDT?", reply_markup=markup)
+    else:
+        # Если не хватает, отправляем ссылку на оплату
+        missing_amount = bot_price - balance
+        bot.send_message(chat_id, f"❗ Недостаточно средств. Нужно ещё {missing_amount} USDT.")
+        send_payment_link(user_id, chat_id, missing_amount)
+
+# === Обработчик оплаты с баланса ===
+@bot.message_handler(func=lambda message: message.text in ["✅ Оплатить с баланса", "❌ Отмена"])
+def process_payment_choice(message):
+    """Обрабатывает выбор оплаты"""
+    user_id = str(message.from_user.id)
+    chat_id = message.chat.id
+
+    if message.text == "✅ Оплатить с баланса":
+        bot_price = 29.99
+
+        if users[user_id]["balance"] >= bot_price:
+            users[user_id]["balance"] -= bot_price
+            save_users()
+
+            bot.send_message(chat_id, "✅ Оплата успешна! Ваш бот создаётся...")
+            finalize_bot_creation(user_id, chat_id)
+        else:
+            bot.send_message(chat_id, "❗ Ошибка: Недостаточно средств.")
+    else:
+        bot.send_message(chat_id, "🚫 Оплата отменена.")
+
+# === Генерация чека через CryptoBot API ===
+def create_invoice(user_id, amount, currency="USDT"):
+    """Создаёт чек для оплаты через CryptoBot"""
+    url = "https://pay.crypt.bot/api/createInvoice"
+    headers = {"Crypto-Pay-API-Token": CRYPTO_BOT_TOKEN}
+    data = {
+        "asset": currency,
+        "amount": amount,
+        "description": f"Оплата создания бота для {user_id}",
+        "hidden_message": "Спасибо за оплату!",
+        "paid_btn_name": "viewItem",
+        "paid_btn_url": "https://t.me/ваш_бот",
+        "allow_comments": False,
+        "allow_anonymous": False,
+        "payload": user_id  # Передаём user_id для обработки платежа
+    }
+    
+    response = requests.post(url, json=data, headers=headers)
+    result = response.json()
+
+    if result.get("ok"):
+        return result["result"]["pay_url"]  # Возвращаем ссылку на оплату
+    else:
+        logging.error(f"❌ Ошибка при создании чека: {result}")
+        return None
+
+# === Функция отправки ссылки на оплату ===
+def send_payment_link(user_id, chat_id, amount):
+    """Генерирует и отправляет ссылку на оплату"""
+    invoice_url = create_invoice(user_id, amount)
+
+    if invoice_url:
+        markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+        markup.add(KeyboardButton("💳 Оплатить"))
+
+        bot.send_message(
+            chat_id,
+            f"💰 Для оплаты {amount} USDT перейдите по ссылке:\n\n[🔗 Оплатить]({invoice_url})",
+            parse_mode="Markdown",
+            reply_markup=markup
+        )
+    else:
+        bot.send_message(chat_id, "❌ Ошибка: не удалось создать чек для оплаты. Попробуйте позже.")
+        # === Вебхук для обработки платежей от CryptoBot ===
+app = Flask(__name__)
+
+@app.route("/cryptobot_webhook", methods=["POST"])
+
     # === Проверка баланса перед оплатой ===
 def check_balance_and_ask_payment(user_id, chat_id):
     """Проверяет баланс пользователя и предлагает оплату"""
