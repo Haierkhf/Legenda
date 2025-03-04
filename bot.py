@@ -190,26 +190,7 @@ def process_bot_type(message):
 
     bot.send_message(message.chat.id, f"Вы выбрали: *{message.text}*\n\nВведите имя для вашего бота:", parse_mode="Markdown")
 
-# === Обработчик ввода имени бота ===
-@bot.message_handler(func=lambda message: users.get(str(message.from_user.id), {}).get("state") == "waiting_for_bot_name")
-def process_bot_name(message):
-    """Сохраняем имя бота и предлагаем оплату"""
-    user_id = str(message.from_user.id)
-    users[user_id]["bot_name"] = message.text
-    users[user_id]["state"] = "waiting_for_payment"
-    save_users()
 
-    markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    markup.add(KeyboardButton("✅ Подтвердить оплату"), KeyboardButton("❌ Отмена"))
-
-    bot.send_message(
-        message.chat.id,
-        f"✅ Имя бота сохранено: *{message.text}*\n\n"
-        f"💰 Стоимость создания: *29.99 USDT*.\n\n"
-        f"Подтвердите оплату или отмените.",
-        reply_markup=markup,
-        parse_mode="Markdown"
-    )
     # === Обработчик ввода имени бота ===
 @bot.message_handler(func=lambda message: users.get(str(message.from_user.id), {}).get("state") == "waiting_for_bot_name")
 def process_bot_name(message):
