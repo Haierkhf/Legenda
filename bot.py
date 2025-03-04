@@ -273,27 +273,28 @@ def check_user_balance(user_id, chat_id):
         bot.send_message(chat_id, f"❗ Недостаточно средств. Нужно еще {missing_amount} USDT.")
         send_payment_link(user_id, chat_id, missing_amount)
 
-# Функция создания счета через Crypto Bot API
 def create_invoice(user_id, amount):
     data = {
-        "asset": "USDT",  # Валюта платежа (можно заменить на BTC, TON и др.)
-        "amount": amount,  # Сумма оплаты
+        "asset": "USDT",
+        "amount": amount,
         "description": "Пополнение баланса",
-        "hidden_message": "Спасибо за оплату!",  # Сообщение после оплаты
-        "paid_btn_name": "openBot",  # Кнопка после оплаты
-        "payload": f"user_{user_id}",  # Уникальный ID юзера
+        "hidden_message": "Спасибо за оплату!",
+        "paid_btn_name": "openBot",
+        "payload": f"user_{user_id}",  # Исправлено
         "allow_comments": False,
         "allow_anonymous": False
     }
 
+    TOKEN = "347583:AA2FTH9et0kfdviBIOv9RfeDPUYq5HAcbRj"  # Твой API-токен
     headers = {"Crypto-Pay-API-Token": TOKEN}
+
     response = requests.post(CRYPTO_PAY_URL, json=data, headers=headers)
 
     if response.status_code == 200:
         invoice = response.json()
-        return invoice["result"]["invoice_url"]  # Возвращаем реальную ссылку на оплату
+        return invoice["result"]["invoice_url"]  # Возвращаем ссылку
     else:
-        print("Ошибка создания платежа:", response.json())  # Выводим ошибку в консоль
+        print("Ошибка создания платежа:", response.json())
         return None  # Если ошибка, возвращаем None
 
 # Функция отправки ссылки на оплату
