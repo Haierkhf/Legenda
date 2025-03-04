@@ -14,6 +14,8 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CRYPTOBOT_API_KEY = os.environ.get("CRYPTOBOT_API_KEY")
 ADMIN_ID = os.environ.get("ADMIN_ID")
 CRYPTO_PAY_URL = "https://pay.crypt.bot/api/createInvoice"
+CRYPTO_BOT_URL = "https://pay.crypt.bot/"
+
 
 if not BOT_TOKEN or not CRYPTOBOT_API_KEY or not ADMIN_ID:
     raise ValueError("Ошибка: не найдены необходимые переменные окружения!")
