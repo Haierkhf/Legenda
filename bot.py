@@ -210,15 +210,11 @@ def show_create_bot_menu(chat_id):
     
     return markup
 
-@bot.callback_query_handler(func=lambda call: call.data == "create_b")
-def create_bot_type_callback(call: CallbackQuery):
-    bot.edit_message_text("Выберите тип бота для создания:", call.message.chat.id)
 @bot.callback_query_handler(func=lambda call: call.data.startswith("create_"))
 def create_bot_callback(call):
-
-    bot_type = call.data.replace("create_", "")  # Получаем тип бота
-    print(f"bot_type после обработки: {bot_type}")  # Проверяем, что получили
-
+    bot_type = call.data.replace("create_", "")
+    bot.send_message(call.message.chat.id, f"Вы выбрали: {bot_type}")
+    print(f"Обработчик сработал, данные: {call.data}")  # Лог
     bot_type_names = {
         "autoposting_bot": "📢 Автопостинг",
         "digital_goods_bot": "🛍 Продажа цифровых товаров",
