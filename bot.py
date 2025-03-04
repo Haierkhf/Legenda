@@ -209,7 +209,7 @@ def privacy_callback(call):
 def check_user_balance(user_id, chat_id):
     user = users.get(user_id, {})
     balance = user.get("balance", 0)
-    bot_price = 10  # Цена создания бота в USDT
+    bot_price = 22.80  # Цена создания бота в USDT
 
     if balance >= bot_price:
         users[user_id]["balance"] -= bot_price  # Списываем сумму
