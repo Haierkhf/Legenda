@@ -20,7 +20,7 @@ logging.basicConfig(
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CRYPTO_BOT_TOKEN = os.getenv("CRYPTO_BOT_TOKEN")
 ADMIN_ID = os.getenv("ADMIN_ID")
-BOT_PRICE = 5  # Стоимость создания бота (USDT)
+BOT_PRICE = 29.99  # Стоимость создания бота (USDT)
 
 if not BOT_TOKEN or not CRYPTO_BOT_TOKEN or not ADMIN_ID:
     raise ValueError("❌ Ошибка: не найдены необходимые переменные окружения!")
