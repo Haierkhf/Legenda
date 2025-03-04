@@ -211,42 +211,38 @@ def show_create_bot_menu(chat_id):
 
     bot.send_message(chat_id, "Выберите тип бота, который хотите создать:", reply_markup=markup)
 
-# Обработчик выбора типа бота
 @bot.callback_query_handler(func=lambda call: call.data.startswith("create_"))
 def create_bot_callback(call):
-    bot_type = call.data.replace("create_", "")  # Получаем тип бота из callback_data
+    print(f"call.data: {call.data}")  # Проверяем, какие данные приходят
+    bot_type = call.data.replace("create_", "")
+    
     bot_type_names = {
         "autoposting_bot": "📢 Автопостинг",
-        "digital_goods_bot": "💳 Продажа цифровых товаров",
-        "crypto_arbitrage_bot": "📊 Арбитраж криптовалют",
-        "ai_image_bot": "🖼️ Генерация AI-изображений",
-        "pdf_bot": "📝 Генерация PDF-документов",
-        "subscriptions_bot": "🔗 Продажа подписок",
+        "digital_goods_bot": "🛒 Продажа цифровых товаров",
+        "crypto_arbitrage_bot": "📈 Арбитраж криптовалют",
+        "ai_image_bot": "🎨 Генерация AI-изображений",
+        "pdf_bot": "📄 Генерация PDF-документов",
+        "subscriptions_bot": "💳 Продажа подписок",
         "airdrop_bot": "🔍 Поиск airdrop'ов",
-        "proxy_bot": "🔒 Продажа VPN/прокси",
-        "booking_bot": "📅 Бронирование услуг"
+        "proxy_bot": "🔐 Продажа VPN/прокси",
+        "booking_bot": "📆 Бронирование услуг"
     }
 
-    user_id = str(call.from_user.id)  # ID пользователя в строковом формате
+    user_id = str(call.from_user.id)
+
+    print(f"bot_type: {bot_type}, bot_type_names: {bot_type_names.keys()}")  
 
     if bot_type in bot_type_names:
-        users[user_id]["selected_bot_type"] = bot_type  # Сохраняем выбранный тип
-        users[user_id]["state"] = "waiting_for_bot_name"  # Меняем состояние пользователя
-        save_users(users)  # Сохраняем в базу
-        
-        bot.send_message(call.message.chat.id, f"Вы выбрали: {bot_type_names[bot_type]}\nВведите имя для вашего бота:")
+        if user_id not in users:
+            users[user_id] = {}
+
+        users[user_id]["selected_bot_type"] = bot_type
+        users[user_id]["state"] = "waiting_for_bot_name"
+        save_users(users)  
+
+        bot.send_message(call.message.chat.id, f"Вы выбрали: {bot_type_names[bot_type]}. Теперь введите имя бота.")
     else:
         bot.send_message(call.message.chat.id, "❌ Ошибка: неизвестный тип бота.")
-
-# Обработчик ввода имени бота
-@bot.message_handler(func=lambda message: get_user_state(message.from_user.id) == "waiting_for_bot_name")
-def process_bot_name(message):
-    user_id = str(message.from_user.id)
-    bot_name = message.text.strip()  # Получаем имя бота
-
-    if user_id not in users or "selected_bot_type" not in users[user_id]:
-        bot.send_message(message.chat.id, "❌ Ошибка: Вы не выбрали тип бота. Попробуйте заново.")
-        return
 
     # Сохраняем имя бота
     users[user_id]["bot_name"] = bot_name
