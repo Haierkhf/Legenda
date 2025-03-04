@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CRYPTOBOT_API_KEY = os.environ.get("CRYPTOBOT_API_KEY")
 ADMIN_ID = os.environ.get("ADMIN_ID")
-
+CRYPTO_PAY_URL = "https://pay.crypt.bot/api/createInvoice"
 if not BOT_TOKEN:
     raise ValueError("Ошибка: BOT_TOKEN не найден!")
 
