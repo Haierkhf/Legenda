@@ -110,7 +110,11 @@ def info_callback(message):
     )
     bot.send_message(message.chat.id, info_text, parse_mode="Markdown")
 
-# === Обработчик кнопки "Профиль" ===
+# Функция экранирования Markdown
+def escape_markdown(text):
+    return re.sub(r'([_*[\]()~`>#+-=|{}.!])', r'\\\1', text)
+
+# Обработчик кнопки "Профиль"
 @bot.message_handler(func=lambda message: message.text == "👤 Профиль")
 def profile_callback(message):
     """Выводит информацию о профиле пользователя"""
@@ -120,7 +124,11 @@ def profile_callback(message):
         bot.send_message(message.chat.id, "❌ Ошибка: ваш профиль не найден.")
         return
 
-    username = users[user_id].get("username", "Не указан")
+    username = users[user_id].get("username")
+    if not username:
+        username = "Не указан"
+    username = escape_markdown(username)  # Экранируем спецсимволы
+
     balance = users[user_id].get("balance", 0)
 
     bot.send_message(
@@ -128,9 +136,11 @@ def profile_callback(message):
         f"👤 *Ваш профиль:*\n\n"
         f"🔹 *Имя пользователя:* @{username}\n"
         f"💰 *Баланс:* {balance} USDT",
-        parse_mode="Markdown"
+        parse_mode="MarkdownV2"
     )
 
+bot.polling()
+    
 # === Обработчик кнопки "Отзывы" ===
 @bot.message_handler(func=lambda message: message.text == "💬 Отзывы")
 def reviews_callback(message):
