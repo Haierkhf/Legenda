@@ -294,6 +294,6 @@ def back_from_payment(message):
     users[str(message.from_user.id)]["state"] = None
     save_users(users)
     bot.send_message(message.chat.id, "🔙 Возвращаемся в главное меню...", reply_markup=main_menu())
-    if __name__ == "__main__":
+if __name__ == "__main__":
     print("✅ Бот запущен и готов к работе!")
     bot.polling(none_stop=True)
