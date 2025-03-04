@@ -2,6 +2,7 @@ import os
 import json
 import logging
 import telebot
+import requests
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from flask import Flask, request
 
