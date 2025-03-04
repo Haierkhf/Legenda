@@ -286,7 +286,7 @@ def create_invoice(user_id, amount):
     }
 
     TOKEN = "347583:AA2FTH9et0kfdviBIOv9RfeDPUYq5HAcbRj"  # Твой API-токен
-    headers = {"Crypto-Pay-API-Token": TOKEN}
+    headers = {"347583:AA2FTH9et0kfdviBIOv9RfeDPUYq5HAcbRj": TOKEN}
 
     response = requests.post(CRYPTO_PAY_URL, json=data, headers=headers)
 
