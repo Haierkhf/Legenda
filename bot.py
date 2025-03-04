@@ -1,10 +1,10 @@
 import os
 import json
 import logging
-import telebot
 import requests
-from telebot.types import ReplyKeyboardMarkup, KeyboardButton
+import telebot
 from flask import Flask, request
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -21,6 +21,7 @@ if not BOT_TOKEN or not CRYPTOBOT_API_KEY or not ADMIN_ID:
 ADMIN_ID = int(ADMIN_ID)
 bot = telebot.TeleBot(BOT_TOKEN)
 
+# Файл пользователей
 USERS_FILE = "users.json"
 
 # Функции загрузки и сохранения пользователей
@@ -36,10 +37,8 @@ def save_users(users):
         json.dump(users, f, indent=4, ensure_ascii=False)
 
 users = load_users()
-
 app = Flask(__name__)
-
-# Функция создания главного меню (клавиатура под строкой ввода)
+# Главное меню
 def main_menu():
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     buttons = [
@@ -57,12 +56,19 @@ def start_handler(message):
     user_id = str(message.from_user.id)
 
     if user_id not in users:
-        users[user_id] = {"balance": 0, "username": message.from_user.username, "chat_id": message.chat.id}
+        users[user_id] = {
+            "balance": 0,
+            "username": message.from_user.username,
+            "chat_id": message.chat.id
+        }
         save_users(users)
 
-    bot.send_message(message.chat.id, "Привет! Выберите действие:", reply_markup=main_menu())
-
-# Функция создания меню с типами ботов
+    bot.send_message(
+        message.chat.id,
+        "Привет! Выберите действие:",
+        reply_markup=main_menu()
+    )
+# Меню выбора типа бота
 def create_bot_menu():
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     options = [
@@ -75,10 +81,159 @@ def create_bot_menu():
         markup.add(KeyboardButton(text))
     return markup
 
-# Обработчик кнопок меню
-@bot.message_handler(func=lambda message: message.text in ["🤖 Создать бота", "🔙 Назад"])
+# Обработчик кнопки "Создать бота"
+@bot.message_handler(func=lambda message: message.text == "🤖 Создать бота")
 def handle_create_bot(message):
     bot.send_message(message.chat.id, "Выберите тип бота:", reply_markup=create_bot_menu())
+
+# Обработчик выбора типа бота
+@bot.message_handler(func=lambda message: message.text in [
+    "📢 Автопостинг", "💳 Продажа цифровых товаров", "📊 Арбитраж криптовалют",
+    "🖼️ Генерация изображений AI", "📝 Генерация PDF-документов",
+    "🔗 Продажа подписок", "🔍 Поиск airdrop'ов", "🔒 Продажа VPN/прокси",
+    "📅 Бронирование услуг"
+])
+def process_bot_type(message):
+    user_id = str(message.from_user.id)
+    users[user_id]["selected_bot_type"] = message.text
+    users[user_id]["state"] = "waiting_for_bot_name"
+    save_users(users)
+
+    bot.send_message(message.chat.id, f"Вы выбрали: {message.text}\n\nВведите имя для вашего бота:")
+
+# Обработчик ввода имени бота
+@bot.message_handler(func=lambda message: users.get(str(message.from_user.id), {}).get("state") == "waiting_for_bot_name")
+def process_bot_name(message):
+    user_id = str(message.from_user.id)
+    users[user_id]["bot_name"] = message.text
+    users[user_id]["state"] = "waiting_for_payment"
+    save_users(users)
+
+    bot.send_message(
+        message.chat.id,
+        f"✅ Имя бота сохранено: *{message.text}*\n\n"
+        "💰 Для продолжения необходимо оплатить создание.\n"
+        "Проверяем ваш баланс...",
+        parse_mode="Markdown"
+    )
+
+    check_user_balance(user_id, message.chat.id)
+# Проверка баланса перед созданием бота
+def check_user_balance(user_id, chat_id):
+    balance = users.get(user_id, {}).get("balance", 0)
+    bot_price = 22.80  # Стоимость создания бота
+
+    if balance >= bot_price:
+        users[user_id]["balance"] -= bot_price
+        save_users(users)
+        finalize_bot_creation(user_id, chat_id)
+    else:
+        missing_amount = bot_price - balance
+        bot.send_message(chat_id, f"❗ Недостаточно средств. Нужно еще {missing_amount} USDT.")
+        send_payment_link(user_id, chat_id, missing_amount)
+
+# Создание счета через Crypto Bot API
+def create_invoice(user_id, amount):
+    data = {
+        "asset": "USDT",
+        "amount": amount,
+        "description": "Пополнение баланса",
+        "hidden_message": "Спасибо за оплату!",
+        "paid_btn_name": "openBot",
+        "payload": f"user_{user_id}",
+        "allow_comments": False,
+        "allow_anonymous": False
+    }
+
+    headers = {"Crypto-Pay-API-Token": CRYPTOBOT_API_KEY}
+    response = requests.post(CRYPTO_PAY_URL, json=data, headers=headers)
+
+    if response.status_code == 200:
+        return response.json()["result"]["pay_url"]
+    else:
+        print("Ошибка создания платежа:", response.text)
+        return None
+
+# Отправка ссылки на оплату
+def send_payment_link(user_id, chat_id, amount):
+    payment_url = create_invoice(user_id, amount)
+
+    if payment_url:
+        bot.send_message(
+            chat_id,
+            f"💳 Пополнение баланса: [Оплатить через CryptoBot]({payment_url})",
+            parse_mode="Markdown"
+        )
+    else:
+        bot.send_message(chat_id, "❌ Ошибка создания платежа. Попробуйте позже.")
+# Вебхук для обработки платежей CryptoBot
+@app.route("/cryptobot_webhook", methods=["POST"])
+def cryptobot_webhook():
+    data = request.json
+
+    if not data or "invoice_id" not in data or "status" not in data:
+        return {"status": "error", "message": "Неверные данные"}
+
+    user_id = data.get("payload")
+    if user_id and data["status"] == "paid":
+        amount = float(data.get("amount", 0))
+        users[user_id]["balance"] += amount
+        save_users(users)
+
+        bot.send_message(users[user_id]["chat_id"], f"✅ Оплата {amount} USDT получена, баланс пополнен!")
+
+        # Если пользователь ждал оплату, проверяем баланс
+        if users[user_id].get("state") == "waiting_for_payment":
+            check_user_balance(user_id, users[user_id]["chat_id"])
+
+    return {"status": "ok"}
+
+# Завершение создания бота после оплаты
+def finalize_bot_creation(user_id, chat_id):
+    bot_name = users[user_id].get("bot_name", "Без имени")
+    bot_type = users[user_id].get("selected_bot_type", "Неизвестный тип")
+
+    bot.send_message(
+        chat_id,
+        f"✅ Ваша заявка отправлена разработчику!\n\n"
+        f"🔹 *Название бота:* {bot_name}\n"
+        f"🔹 *Тип:* {bot_type}\n\n"
+        f"⏳ Среднее время создания: *до 72 часов*.\n"
+        f"🔔 Вы получите уведомление, когда бот будет готов!",
+        parse_mode="Markdown"
+    )
+
+    # Уведомление администратору
+    bot.send_message(
+        ADMIN_ID,
+        f"🔔 *Новая заявка на бота!*\n\n"
+        f"👤 Пользователь: @{users[user_id].get('username', 'Неизвестно')}\n"
+        f"🔹 Название: {bot_name}\n"
+        f"🔹 Тип: {bot_type}\n",
+        parse_mode="Markdown"
+    )
+
+    users[user_id]["state"] = None
+    save_users(users)
+    # Обработчик профиля
+@bot.message_handler(func=lambda message: message.text == "👤 Профиль")
+def profile_callback(message):
+    user_id = str(message.from_user.id)
+
+    if user_id not in users:
+        bot.send_message(message.chat.id, "❌ Ошибка: ваш профиль не найден.")
+        return
+
+    username = users[user_id].get("username", "Не указан")
+    balance = users[user_id].get("balance", 0)
+
+    bot.send_message(
+        message.chat.id,
+        f"👤 *Ваш профиль:*\n\n"
+        f"🔹 *Имя пользователя:* @{username}\n"
+        f"💰 *Баланс:* {balance} USDT",
+        parse_mode="Markdown"
+    )
 
 # Обработчик информации
 @bot.message_handler(func=lambda message: message.text == "ℹ️ Информация")
@@ -101,69 +256,44 @@ def info_callback(message):
     )
     bot.send_message(message.chat.id, info_text, parse_mode="Markdown")
 
-# Обработчик профиля
-@bot.message_handler(func=lambda message: message.text == "👤 Профиль")
-def profile_callback(message):
-    user_id = str(message.from_user.id)
+# Кнопка "Отзывы" с актуальной ссылкой
+@bot.message_handler(func=lambda message: message.text == "💬 Отзывы")
+def reviews_callback(message):
+    bot.send_message(
+        message.chat.id,
+        "💬 Вы можете оставить отзыв или прочитать мнения других пользователей здесь:\n\n"
+        "👉 [Перейти в группу отзывов](https://t.me/nWf0L9BBCoJlY2Qy)",
+        parse_mode="Markdown",
+        disable_web_page_preview=True
+    )
+    # Обработчик кнопки "Назад" везде, где это требуется
+@bot.message_handler(func=lambda message: message.text == "🔙 Назад")
+def back_to_main_menu(message):
+    bot.send_message(message.chat.id, "🔙 Возвращаемся в главное меню...", reply_markup=main_menu())
 
-    if user_id not in users:
-        bot.send_message(message.chat.id, "❌ Ошибка: ваш профиль не найден.")
-        return
+# Обработчик кнопки "Назад" из меню выбора бота
+@bot.message_handler(func=lambda message: message.text in [
+    "📢 Автопостинг", "💳 Продажа цифровых товаров", "📊 Арбитраж криптовалют",
+    "🖼️ Генерация изображений AI", "📝 Генерация PDF-документов",
+    "🔗 Продажа подписок", "🔍 Поиск airdrop'ов", "🔒 Продажа VPN/прокси",
+    "📅 Бронирование услуг"
+])
+def back_from_bot_type(message):
+    bot.send_message(message.chat.id, "🔙 Возвращаемся в меню выбора типа бота...", reply_markup=create_bot_menu())
 
-    username = users[user_id].get("username", "Не указан")
-    balance = users[user_id].get("balance", 0)
-    bot.send_message(message.chat.id, f"👤 Ваш профиль:\n\n🔹 Имя пользователя: @{username}\n💰 Баланс: {balance} USDT")
+# Обработчик кнопки "Назад" из этапа ввода имени бота
+@bot.message_handler(func=lambda message: users.get(str(message.from_user.id), {}).get("state") == "waiting_for_bot_name")
+def back_from_bot_name(message):
+    users[str(message.from_user.id)]["state"] = None
+    save_users(users)
+    bot.send_message(message.chat.id, "🔙 Возвращаемся в меню выбора типа бота...", reply_markup=create_bot_menu())
 
-# Функция проверки баланса перед созданием бота
-def check_user_balance(user_id, chat_id):
-    balance = users.get(user_id, {}).get("balance", 0)
-    bot_price = 22.80
-
-    if balance >= bot_price:
-        users[user_id]["balance"] -= bot_price
-        save_users(users)
-        finalize_bot_creation(user_id, chat_id)
-    else:
-        missing_amount = bot_price - balance
-        bot.send_message(chat_id, f"❗ Недостаточно средств. Нужно еще {missing_amount} USDT.")
-        send_payment_link(user_id, chat_id, missing_amount)
-
-# Функция создания счета через Crypto Bot API
-def create_invoice(user_id, amount):
-    data = {
-        "asset": "USDT",
-        "amount": amount,
-        "description": "Пополнение баланса",
-        "hidden_message": "Спасибо за оплату!",
-        "paid_btn_name": "openBot",
-        "payload": f"user_{user_id}",
-        "allow_comments": False,
-        "allow_anonymous": False
-    }
-
-    headers = {"Crypto-Pay-API-Token": CRYPTOBOT_API_KEY}
-    response = requests.post(CRYPTO_PAY_URL, json=data, headers=headers)
-
-    if response.status_code == 200:
-        return response.json()["result"]["pay_url"]
-    else:
-        print("Ошибка создания платежа:", response.text)
-        return None
-
-# Функция отправки ссылки на оплату
-def send_payment_link(user_id, chat_id, amount):
-    payment_url = create_invoice(user_id, amount)
-
-    if payment_url:
-        bot.send_message(chat_id, f"💳 Пополнение баланса: [Оплатить через CryptoBot]({payment_url})", parse_mode="Markdown")
-    else:
-        bot.send_message(chat_id, "❌ Ошибка создания платежа. Попробуйте позже.")
-
-# Функция уведомления админа о покупке
-def finalize_bot_creation(user_id, chat_id):
-    bot.send_message(ADMIN_ID, f"🔔 Новый заказ!\n👤 Пользователь: @{users[user_id].get('username', 'Неизвестно')}")
-    bot.send_message(chat_id, "✅ Бот успешно куплен и будет создан!")
-
-if __name__ == "__main__":
+# Обработчик кнопки "Назад" из этапа оплаты
+@bot.message_handler(func=lambda message: users.get(str(message.from_user.id), {}).get("state") == "waiting_for_payment")
+def back_from_payment(message):
+    users[str(message.from_user.id)]["state"] = None
+    save_users(users)
+    bot.send_message(message.chat.id, "🔙 Возвращаемся в главное меню...", reply_markup=main_menu())
+    if __name__ == "__main__":
     print("✅ Бот запущен и готов к работе!")
     bot.polling(none_stop=True)
