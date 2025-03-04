@@ -134,22 +134,30 @@ def check_user_balance(user_id, chat_id):
         bot.send_message(chat_id, f"❗ Недостаточно средств. Нужно еще {missing_amount} USDT.")
         send_payment_link(user_id, chat_id, missing_amount)
 
-# Создание счета через Crypto Bot API
-@bot.message_handler(commands=['buy'])
-def send_invoice(message):
-    usdt_amount = 28.99  # Установленная сумма в USDT
-    invoice_link = f"{CRYPTO_BOT_URL}send_{usdt_amount}_USDT"
 
-    bot.send_message(
-        message.chat.id,
-        f"💰 Оплата в USDT\n\nСумма: {usdt_amount} USDT\n\n[🔗 Оплатить]({invoice_link})",
-        parse_mode="Markdown",
-        disable_web_page_preview=True
-    )
+def send_payment_button(chat_id):
+    """Функция отправки кнопки для оплаты"""
+    markup = InlineKeyboardMarkup()
+    markup.add(InlineKeyboardButton("💳 Оплатить создание бота", callback_data="pay_create_bot"))
 
-def send_payment_link(user_id, chat_id, amount):
-    payment_url = f"https://pay.crypt.bot/?to=347583:AA2FTH9et0kfdviBIOv9RfeDPUYq5HAcbRj&amount={amount}&currency=USDT"
-    bot.send_message(chat_id, f"Оплатите {amount} USDT по ссылке: {payment_url}")
+    bot.send_message(chat_id, "Для оплаты нажмите кнопку ниже:", reply_markup=markup)
+
+@bot.callback_query_handler(func=lambda call: call.data == "pay_create_bot")
+def process_payment(call):
+    """Обработчик нажатия на кнопку оплаты"""
+    user_id = call.from_user.id
+
+    if user_id not in users:
+        bot.send_message(call.message.chat.id, "⚠️ Вы не зарегистрированы в системе.")
+        return
+
+    amount = 29.99  # Цена создания бота в USDT
+    payment_url = f"https://pay.crypt.bot/?to=ВАШ_КОШЕЛЕК&amount={amount}&currency=USDT"
+
+    markup = InlineKeyboardMarkup()
+    markup.add(InlineKeyboardButton("🔗 Оплатить", url=payment_url))
+
+    bot.send_message(call.message.chat.id, f"💰 Для оплаты перейдите по ссылке:", reply_markup=markup)
 # Завершение создания бота после оплаты
 def finalize_bot_creation(user_id, chat_id):
     bot_name = users[user_id].get("bot_name", "Без имени")
