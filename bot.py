@@ -213,6 +213,9 @@ def show_create_bot_menu(chat_id):
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("create_"))
 def create_bot_callback(call):
+    bot_type = call.data.replace("create_", "")
+    bot.send_message(call.message.chat.id, f"Вы выбрали: {bot_type}"
+    print(f"Обработчик сработал, данные: {call.data}")  # Лог
     print(f"call.data: {call.data}")  # Проверяем, какие данные приходят
 
     bot_type = call.data.replace("create_", "")  # Получаем тип бота
