@@ -163,11 +163,14 @@ def profile_callback(call):
     username = users[user_id].get("username", "Не указан")
     balance = users[user_id].get("balance", 0)
 
+    # Экранируем специальные символы Markdown
+    username_safe = username.replace("_", "\\_").replace("*", "\\*").replace("[", "\").replace("]", "\")
+
     profile_text = (f"👤 *Ваш профиль:*\n\n"
-                    f"🔹 *Имя пользователя:* @{username}\n"
+                    f"🔹 *Имя пользователя:* @{username_safe}\n"
                     f"💰 *Баланс:* {balance} USDT")
 
-    bot.send_message(call.message.chat.id, profile_text, parse_mode="Markdown")
+    bot.send_message(call.message.chat.id, profile_text, parse_mode="MarkdownV2")  # Используем MarkdownV2
 
 # Обработчик кнопки "ℹ️ Информация"
 @bot.callback_query_handler(func=lambda call: call.data == "info")
