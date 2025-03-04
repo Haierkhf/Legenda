@@ -18,8 +18,11 @@ ADMIN_ID = os.getenv("ADMIN_ID")
 if not BOT_TOKEN or not CRYPTO_BOT_TOKEN or not ADMIN_ID:
     logging.error("❌ Ошибка: Не найдены все нужные переменные окружения!")
     raise ValueError("BOT_TOKEN, CRYPTO_BOT_TOKEN или ADMIN_ID отсутствуют!")
+if ADMIN_ID is None:
+    logging.error("❌ Ошибка: ADMIN_ID отсутствует!")
+    raise ValueError("ADMIN_ID отсутствует!")
 
-ADMIN_ID = int(ADMIN_ID)  # Убеждаемся, что это число
+ADMIN_ID = int(ADMIN_ID)  # Преобразуем только если точно есть значение
 bot = telebot.TeleBot(BOT_TOKEN)
 
 # === ЗАГРУЗКА ПОЛЬЗОВАТЕЛЕЙ ===
@@ -32,11 +35,12 @@ def load_users():
             try:
                 return json.load(f)
             except json.JSONDecodeError:
-                logging.warning("⚠️ Ошибка чтения users.json. Создаю новый файл.")
+                logging.warning("⚠️ Ошибка чтения users.json. Пересоздаём файл.")
+                save_users({})  # Перезаписываем пустым JSON
                 return {}
     return {}
 
-def save_users():
+def save_users(users):
     """Автосохранение users.json при изменении данных"""
     with open(USERS_FILE, "w", encoding="utf-8") as f:
         json.dump(users, f, indent=4, ensure_ascii=False)
