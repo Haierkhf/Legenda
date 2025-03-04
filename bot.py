@@ -284,7 +284,6 @@ def finalize_bot_creation(user_id, chat_id):
     # Очистка состояния
     users[user_id]["state"] = None
     save_users(users)
-    if __name__ == "__main__":
+if __name__ == "__main__":
     print("✅ Бот запущен и готов к работе!")
     bot.polling(none_stop=True)
-    
