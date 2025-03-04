@@ -123,7 +123,7 @@ def process_bot_name(message):
 # Проверка баланса перед созданием бота
 def check_user_balance(user_id, chat_id):
     balance = users.get(user_id, {}).get("balance", 0)
-    bot_price = 22.80  # Стоимость создания бота
+    bot_price = 29.99  # Стоимость создания бота
 
     if balance >= bot_price:
         users[user_id]["balance"] -= bot_price
