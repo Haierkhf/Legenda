@@ -190,33 +190,31 @@ def show_privacy_policy(chat_id):
         "📌 Используя этого бота, вы соглашаетесь с данной политикой."
     )
     bot.send_message(chat_id, text, parse_mode="Markdown")
-# Функция для отображения меню выбора типа бота
-def show_create_bot_menu(chat_id):
+def create_bot_menu():
     markup = InlineKeyboardMarkup()
-    buttons = [
-        InlineKeyboardButton("📢 Автопостинг", callback_data="create_autoposting_bot"),
-        InlineKeyboardButton("💳 Продажа цифровых товаров", callback_data="create_digital_goods_bot"),
-        InlineKeyboardButton("📊 Арбитраж криптовалют", callback_data="create_crypto_arbitrage_bot"),
-        InlineKeyboardButton("🖼️ Генерация AI-изображений", callback_data="create_ai_image_bot"),
-        InlineKeyboardButton("📝 Генерация PDF-документов", callback_data="create_pdf_bot"),
-        InlineKeyboardButton("🔗 Продажа подписок", callback_data="create_subscriptions_bot"),
-        InlineKeyboardButton("🔍 Поиск airdrop'ов", callback_data="create_airdrop_bot"),
-        InlineKeyboardButton("🔒 Продажа VPN/прокси", callback_data="create_proxy_bot"),
-        InlineKeyboardButton("📅 Бронирование услуг", callback_data="create_booking_bot"),
-        InlineKeyboardButton("🔙 Назад", callback_data="main_menu")
+    options = [
+        ("📢 Автопостинг", "create_autoposting_bot"),
+        ("💳 Продажа цифровых товаров", "create_digital_goods_bot"),
+        ("📊 Арбитраж криптовалют", "create_crypto_arbitrage_bot"),
+        ("🖼️ Генерация изображений AI", "create_ai_image_bot"),
+        ("📝 Генерация PDF-документов", "create_pdf_bot"),
+        ("🔗 Продажа подписок", "create_subscriptions_bot"),
+        ("🔍 Поиск airdrop'ов", "create_airdrop_bot"),
+        ("🔒 Продажа VPN/прокси", "create_proxy_bot"),
+        ("📅 Бронирование услуг", "create_booking_bot"),
+        ("🔙 Назад", "main_menu")
     ]
     
-    for button in buttons:
-        markup.add(button)
+    for text, data in options:
+        markup.add(InlineKeyboardButton(text=text, callback_data=data))
+    
+    return markup
 
-    bot.send_message(chat_id, "Выберите тип бота, который хотите создать:", reply_markup=markup)
-
+@bot.callback_query_handler(func=lambda call: call.data == "create_b")
+def create_bot_type_callback(call: CallbackQuery):
+    bot.edit_message_text("Выберите тип бота для создания:", call.message.chat.id)
 @bot.callback_query_handler(func=lambda call: call.data.startswith("create_"))
 def create_bot_callback(call):
-    bot_type = call.data.replace("create_", "")
-    bot.send_message(call.message.chat.id, f"Вы выбрали: {bot_type}")
-    print(f"Обработчик сработал, данные: {call.data}")  # Лог
-    print(f"call.data: {call.data}")  # Проверяем, какие данные приходят
 
     bot_type = call.data.replace("create_", "")  # Получаем тип бота
     print(f"bot_type после обработки: {bot_type}")  # Проверяем, что получили
