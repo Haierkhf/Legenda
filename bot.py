@@ -205,7 +205,8 @@ def privacy_callback(call):
         "❗ Используя нашего бота, вы соглашаетесь с данной политикой."
     )
     bot.send_message(call.message.chat.id, privacy_text, parse_mode="Markdown")
-    # Функция проверки баланса перед созданием бота
+
+# Функция проверки баланса перед созданием бота
 def check_user_balance(user_id, chat_id):
     user = users.get(user_id, {})
     balance = user.get("balance", 0)
@@ -220,18 +221,42 @@ def check_user_balance(user_id, chat_id):
         bot.send_message(chat_id, f"❗ Недостаточно средств. Нужно еще {missing_amount} USDT.")
         send_payment_link(user_id, chat_id, missing_amount)
 
+# Функция создания счета через Crypto Bot API
+def create_invoice(user_id, amount):
+    data = {
+        "asset": "USDT",  # Валюта платежа (можно заменить на BTC, TON и др.)
+        "amount": amount,  # Сумма оплаты
+        "description": "Пополнение баланса",
+        "hidden_message": "Спасибо за оплату!",  # Сообщение после оплаты
+        "paid_btn_name": "openBot",  # Кнопка после оплаты
+        "payload": f"user_{user_id}",  # Уникальный ID юзера
+        "allow_comments": False,
+        "allow_anonymous": False
+    }
+
+    headers = {"Crypto-Pay-API-Token": TOKEN}
+    response = requests.post(CRYPTO_PAY_URL, json=data, headers=headers)
+
+    if response.status_code == 200:
+        invoice = response.json()
+        return invoice["result"]["invoice_url"]  # Возвращаем реальную ссылку на оплату
+    else:
+        print("Ошибка создания платежа:", response.json())  # Выводим ошибку в консоль
+        return None  # Если ошибка, возвращаем None
+
 # Функция отправки ссылки на оплату
 def send_payment_link(user_id, chat_id, amount):
-    invoice_id = f"invoice_{user_id}"  # Уникальный ID для платежа
-    payment_url = f"https://t.me/CryptoBot?start={invoice_id}"
-    
-    pending_payments[user_id] = invoice_id  # Добавляем в список ожидающих оплат
+    payment_url = create_invoice(user_id, amount)
 
-    bot.send_message(
-        chat_id,
-        f"💳 Для пополнения баланса на {amount} USDT перейдите по ссылке:\n\n"
-        f"[Оплатить через CryptoBot]({payment_url})",
-        parse_mode="Markdown",
+    if payment_url:
+        bot.send_message(
+            chat_id,
+            f"💳 Для пополнения баланса на {amount} USDT перейдите по ссылке:\n\n"
+            f"[Оплатить через CryptoBot]({payment_url})",
+            parse_mode="Markdown",
+        )
+    else:
+        bot.send_message(chat_id, "❌ Ошибка создания платежа. Попробуйте позже.")
 
 # Функция проверки баланса перед созданием бота
 def check_user_balance(user_id, chat_id):
