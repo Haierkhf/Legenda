@@ -43,7 +43,7 @@ def start(message):
     markup.add(*[KeyboardButton(btn) for btn in buttons])
 
     bot.send_message(user_id, "👋 Добро пожаловать! Выберите действие:", reply_markup=markup)
-    @bot.message_handler(func=lambda message: message.text == "👤 Профиль")
+@bot.message_handler(func=lambda message: message.text == "👤 Профиль")
 def profile(message):
     user_id = message.chat.id
     users = load_users()
