@@ -12,11 +12,11 @@ import shutil
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-CRYPTOBOT_TOKEN = os.getenv("CRYPTOBOT_TOKEN")
+CRYPTO_BOT_TOKEN = os.getenv("CRYPTO_BOT_TOKEN")
 ADMIN_ID = os.getenv("ADMIN_ID")
 
 print("BOT_TOKEN:", BOT_TOKEN)
-print("CRYPTOBOT_TOKEN:", CRYPTOBOT_TOKEN)
+print("CRYPTO_BOT_TOKEN:", CRYPTO_BOT_TOKEN)
 print("ADMIN_ID:", ADMIN_ID)
 
 bot = telebot.TeleBot(BOT_TOKEN)
