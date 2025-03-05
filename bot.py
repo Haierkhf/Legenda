@@ -82,7 +82,8 @@ def process_deposit(message):
 
     except ValueError:
         bot.send_message(user_id, "❌ Введите корректное число.")
-        @bot.callback_query_handler(func=lambda call: call.data == "withdraw")
+        
+@bot.callback_query_handler(func=lambda call: call.data == "withdraw")
 def withdraw(call):
     bot.send_message(call.message.chat.id, "Введите сумму для вывода (мин. 10$):")
     bot.register_next_step_handler(call.message, process_withdraw)
@@ -110,7 +111,8 @@ def process_withdraw(message):
 
     except ValueError:
         bot.send_message(user_id, "❌ Введите корректное число.")
-        @bot.message_handler(func=lambda message: message.text == "ℹ️ Информация")
+        
+@bot.message_handler(func=lambda message: message.text == "ℹ️ Информация")
 def info(message):
     text = ("ℹ️ В этом разделе вы найдете все ответы на ваши вопросы:\n\n"
             "🔹 *Профиль* - здесь можно пополнить баланс, вывести деньги, "
@@ -128,7 +130,8 @@ def info(message):
             "   - ADMIN_ID (узнать в @userinfobot) – ID владельца бота.")
 
     bot.send_message(message.chat.id, text, parse_mode="Markdown")
-    @bot.message_handler(func=lambda message: message.text == "⭐ Отзывы")
+    
+@bot.message_handler(func=lambda message: message.text == "⭐ Отзывы")
 def reviews(message):
     bot.send_message(message.chat.id, "⭐ Посмотреть отзывы: [Отзывы](https://t.me/nWf0L9BBCoJlY2Qy)", parse_mode="Markdown")
     # Обработчик кнопки "🤖 Создать бота"
@@ -151,7 +154,8 @@ def create_bot_handler(message):
         "Выберите тип бота, которого хотите создать 👇",
         reply_markup=markup
     )
-    @bot.message_handler(func=lambda message: message.text == "🤖 Создать бота")
+    
+@bot.message_handler(func=lambda message: message.text == "🤖 Создать бота")
 def create_bot(message):
     user_id = message.chat.id
     log_action(user_id, "открыл меню создания бота")
@@ -172,6 +176,7 @@ def create_bot(message):
     "💰 Донат-бот", "📩 Бот-рассыльщик", "⚙️ Поддержка клиентов",
     "🔄 Обменный бот", "📊 Бот-аналитик", "🎮 Игровой бот"
 ])
+    
 def ask_bot_name(message):
     user_id = message.chat.id
     bot_type = message.text
@@ -226,7 +231,8 @@ def save_bot_token(message, key):
         markup.add(InlineKeyboardButton("❌ Отменить", callback_data="back_main"))
 
         bot.send_message(user_id, f"💵 С вашего баланса будет списано {price}$. Подтвердите оплату:", reply_markup=markup)
-        @bot.callback_query_handler(func=lambda call: call.data == "confirm_payment")
+        
+@bot.callback_query_handler(func=lambda call: call.data == "confirm_payment")
 def process_payment(call):
     user_id = call.message.chat.id
     users = load_users()
