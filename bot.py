@@ -70,6 +70,15 @@ def start_handler(message):
         "👋 Добро пожаловать! Этот бот поможет вам создать собственного Telegram-бота.",
         reply_markup=main_menu()
     )
+    # Функция безопасного запуска основного бота
+def start_bot():
+    while True:
+        try:
+            logging.info("✅ Основной бот запущен.")
+            bot.polling(none_stop=True, interval=1, timeout=20)
+        except Exception as e:
+            logging.error(f"Ошибка в основном боте: {traceback.format_exc()}")
+            time.sleep(5)  # Ждем перед повторным запуском
     # Функция обработки кнопки "ℹ️ Информация"
 @bot.message_handler(func=lambda message: message.text == "ℹ️ Информация")
 def info_handler(message):
