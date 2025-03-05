@@ -40,6 +40,7 @@ if user_id_str not in users:
 
 users[user_id_str]["actions"].append(action)  # Теперь можно добавлять действие
     save_users(users)
+
 @bot.message_handler(commands=['start'])
 def start(message):
     user_id = message.chat.id
