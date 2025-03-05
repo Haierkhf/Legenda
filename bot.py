@@ -43,7 +43,6 @@ def log_action(user_id, action):
 
     users[user_id_str]["actions"].append(action)  # Добавляем действие
     save_users(users)  # Сохраняем изменения
-
 @bot.message_handler(commands=['start'])
 def start(message):
     user_id = message.chat.id
