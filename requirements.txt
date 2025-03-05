@@ -3,5 +3,4 @@ python-dotenv  # Для работы с .env файлами
 requests  # Для HTTP-запросов
 fastapi  # Используется в проекте (если точно нужен)
 uvicorn  # Для запуска FastAPI (если нужен)
-flask  # Используется в коде
 cryptography  # Если CRYPTOBOT_API_KEY требует шифрования
