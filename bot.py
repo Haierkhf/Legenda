@@ -5,6 +5,7 @@ import threading
 import time
 import subprocess
 import telebot
+from telebot import types
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from dotenv import load_dotenv
 import requests
@@ -155,7 +156,7 @@ def profile_menu():
 
 # Обработчик команды /start
 @bot.message_handler(commands=['запустить'])
-async def start_handler(message: types.Message):
+def start_handler(message: types.Message):
     user_id = str(message.from_user.id)
     args = message.get_args()
     register_user(user_id)
