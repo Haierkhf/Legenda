@@ -60,7 +60,8 @@ def profile(message):
     markup.add(InlineKeyboardButton("🔙 Назад", callback_data="back_main"))
 
     bot.send_message(user_id, f"💰 Баланс: {balance}$\n📜 Последние действия:\n{actions}", reply_markup=markup)
-    @bot.callback_query_handler(func=lambda call: call.data == "deposit")
+    
+@bot.callback_query_handler(func=lambda call: call.data == "deposit")
 def deposit(call):
     bot.send_message(call.message.chat.id, "Введите сумму для пополнения (мин. 1$):")
     bot.register_next_step_handler(call.message, process_deposit)
