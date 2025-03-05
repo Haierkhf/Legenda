@@ -214,20 +214,17 @@ def save_bot_token(message, key):
     user_id = message.chat.id
     users = load_users()
     balance = users[str(user_id)]["balance"]
-
     price = 29.99
     if balance < price:
         payment_link = f"https://t.me/CryptoBot?start=pay_{price}"
         markup = InlineKeyboardMarkup()
         markup.add(InlineKeyboardButton("💳 Оплатить", url=payment_link))
         markup.add(InlineKeyboardButton("🔙 Назад", callback_data="back_main"))
-
         bot.send_message(user_id, f"❌ Недостаточно средств. Вам нужно {price}$. Пополните баланс:", reply_markup=markup)
     else:
         markup = InlineKeyboardMarkup()
         markup.add(InlineKeyboardButton("✅ Подтвердить", callback_data="confirm_payment"))
         markup.add(InlineKeyboardButton("❌ Отменить", callback_data="back_main"))
-
         bot.send_message(user_id, f"💵 С вашего баланса будет списано {price}$. Подтвердите оплату:", reply_markup=markup)
         
 @bot.callback_query_handler(func=lambda call: call.data == "confirm_payment")
