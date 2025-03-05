@@ -147,66 +147,95 @@ def create_payment_invoice(user_id, amount):
 def top_up_balance(message):
     bot.send_message(message.chat.id, "Введите сумму USDT, которую хотите пополнить:")
 
-    @bot.message_handler(content_types=["text"])
-    def process_top_up_amount(msg):
-        try:
-            amount = float(msg.text)
-            if amount <= 0:
-                bot.send_message(msg.chat.id, "❌ Некорректная сумма. Попробуйте еще раз.")
-                return
-            
-            pay_url = create_payment_invoice(msg.chat.id, amount)
-            if pay_url:
-                bot.send_message(msg.chat.id, f"💰 Оплатите {amount} USDT по ссылке:\n{pay_url}")
-            else:
-                bot.send_message(msg.chat.id, "❌ Ошибка при создании чека. Попробуйте позже.")
-        except ValueError:
-            bot.send_message(msg.chat.id, "❌ Введите корректное число.")
-            # Обработчик кнопки "💸 Вывести средства"
-@bot.message_handler(func=lambda message: message.text == "💸 Вывести средства")
-def withdraw_balance(message):
-    user_id = str(message.chat.id)
-    user_data = get_user(user_id)
+# Профильное меню
+def profile_menu():
+    kb = ReplyKeyboardMarkup(resize_keyboard=True)
+    kb.add(KeyboardButton("🔙 Назад"))
+    return kb
 
-    bot.send_message(message.chat.id, f"💰 Ваш баланс: {user_data['balance']:.2f} USDT\nВведите сумму для вывода:")
+# Обработчик команды /start
+@dp.message_handler(commands=['start'])
+async def start_handler(message: types.Message):
+    user_id = str(message.from_user.id)
+    args = message.get_args()
+    register_user(user_id)
 
-    @bot.message_handler(content_types=["text"])
-    def process_withdraw(msg):
-        try:
-            amount = float(msg.text)
-            if amount <= 0 or amount > user_data["balance"]:
-                bot.send_message(msg.chat.id, "❌ Некорректная сумма для вывода.")
-                return
-            
-            # Здесь добавьте ваш процесс вывода (например, через CryptoBot)
-            user_data["balance"] -= amount
-            save_user_data()
-            bot.send_message(msg.chat.id, f"✅ Запрос на вывод {amount} USDT отправлен. Ожидайте обработки.")
-        except ValueError:
-            bot.send_message(msg.chat.id, "❌ Введите корректное число.")
-            # Обработчик кнопки "🔗 Моя реферальная ссылка"
-@bot.message_handler(func=lambda message: message.text == "🔗 Моя реферальная ссылка")
-def referral_link(message):
-    user_id = str(message.chat.id)
-    ref_link = f"https://t.me/{BOT_USERNAME}?start=ref{user_id}"
-    
-    bot.send_message(user_id, f"🔗 Ваша реферальная ссылка:\n{ref_link}\n\n"
-                              "Приглашайте друзей и получайте 15% с их пополнений!")
-    # Обработчик кнопки "📊 Моя статистика"
-@bot.message_handler(func=lambda message: message.text == "📊 Моя статистика")
-def user_statistics(message):
-    user_id = str(message.chat.id)
-    user_data = get_user(user_id)
+    if args.startswith("ref_"):
+        referrer_id = args.replace("ref_", "")
+        if referrer_id != user_id and referrer_id in users and users[user_id]["referrer"] is None:
+            users[user_id]["referrer"] = referrer_id
+            users[referrer_id]["referrals"] += 1
+            save_users()
 
-    stats_text = (
-        f"📊 *Ваша статистика:*\n\n"
-        f"🔹 *Создано ботов:* {user_data.get('bots_created', 0)}\n"
-        f"🔹 *Рефералов:* {len(user_data.get('referrals', []))}\n"
-        f"🔹 *Заработано с рефералов:* {user_data.get('earned_from_referrals', 0.0):.2f} USDT\n"
-    )
+    await message.answer("👋 Привет! Выберите действие:", reply_markup=main_menu())
 
-    bot.send_message(user_id, stats_text, parse_mode="Markdown")
-    # Функция создания меню выбора типа бота
+# Профиль пользователя
+@dp.message_handler(lambda message: message.text == "👤 Профиль")
+async def profile_handler(message: types.Message):
+    user_id = str(message.from_user.id)
+    register_user(user_id)
+
+    data = users[user_id]
+    ref_link = get_ref_link(user_id)
+
+    text = (f"👤 *Ваш профиль:*\n"
+            f"💰 Баланс: {data['balance']} USDT\n"
+            f"🤖 Создано ботов: {data['bots_created']}\n"
+            f"👥 Рефералы: {data['referrals']}\n"
+            f"💵 Заработано с рефералов: {data['ref_earnings']} USDT\n\n"
+            f"🔗 *Ваша реферальная ссылка:*\n`{ref_link}`")
+
+    await message.answer(text, reply_markup=profile_menu(), parse_mode="Markdown")
+
+# Пополнение баланса через CryptoBot
+@dp.message_handler(lambda message: message.text == "💰 Пополнить баланс")
+async def top_up_balance(message: types.Message):
+    user_id = str(message.from_user.id)
+    invoice = create_cryptobot_invoice(user_id, 10)  # Минимальная сумма 1 USDT
+    if invoice:
+        await message.answer(f"💳 Для пополнения нажмите:\n{invoice}")
+    else:
+        await message.answer("❌ Ошибка при создании платежа.")
+
+def create_cryptobot_invoice(user_id, amount):
+    url = f"https://pay.crypt.bot/api/createInvoice"
+    headers = {"Crypto-Pay-API-Token": CRYPTOBOT_TOKEN}
+    data = {
+        "asset": "USDT", "amount": amount, "description": "Пополнение баланса",
+        "hidden_message": user_id, "allow_comments": False, "allow_anonymous": False
+    }
+
+    try:
+        response = requests.post(url, json=data, headers=headers).json()
+        return response.get("result", {}).get("pay_url")
+    except:
+        return None
+
+# Проверка платежей (автоначисление)
+async def check_payments():
+    url = f"https://pay.crypt.bot/api/getInvoices"
+    headers = {"Crypto-Pay-API-Token": CRYPTOBOT_TOKEN}
+
+    try:
+        response = requests.get(url, headers=headers).json()
+        for invoice in response["result"]:
+            if invoice["status"] == "paid":
+                user_id = invoice["hidden_message"]
+                amount = float(invoice["amount"])
+                
+                if user_id in users:
+                    users[user_id]["balance"] += amount
+                    referrer_id = users[user_id]["referrer"]
+                    
+                    if referrer_id:
+                        bonus = round(amount * 0.15, 2)
+                        users[referrer_id]["balance"] += bonus
+                        users[referrer_id]["ref_earnings"] += bonus
+                        await bot.send_message(referrer_id, f"🎉 Вам начислено {bonus} USDT за реферала!")
+
+                    save_users()
+    except:
+        pass
 def bot_selection_menu():
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     bot_types = [
