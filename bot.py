@@ -315,15 +315,19 @@ bot.polling(none_stop=True)
     
     bot.send_message(user_id, f"✅ Ваш бот {user_data['name']} запущен и работает!")
     # Функция автоматического перезапуска бота после сбоя
+
 def auto_restart_bots():
     while True:
-        for user_id, bot_data in user_bot_data.items():
-            bot_filename = f"user_bot_{user_id}.py"
-            result = subprocess.run(["pgrep", "-f", bot_filename], capture_output=True, text=True)
-            if not result.stdout:
-                bot.send_message(user_id, f"⚠ Ваш бот {bot_data['name']} был остановлен и перезапускается...")
-                subprocess.run(["supervisorctl", "restart", f"user_bot_{user_id}"])
-        time.sleep(60)
+        try:
+            for user_id, bot_data in user_bot_data.items():
+                bot_filename = f"user_bot_{user_id}.py"
+                result = subprocess.run(["pgrep", "-f", bot_filename], capture_output=True, text=True)
+                if not result.stdout:
+                    bot.send_message(user_id, f"⚠️ Ваш бот {bot_data['name']} упал. Перезапускаем...")
+                    subprocess.run(["supervisorctl", "restart", f"user_bot_{user_id}"])
+            time.sleep(60)
+        except Exception as e:
+            logging.error(f"Ошибка в auto_restart_bots: {e}")
 
 # Запуск потока для отслеживания ботов
 restart_thread = threading.Thread(target=auto_restart_bots, daemon=True)
