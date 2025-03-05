@@ -33,7 +33,6 @@ def log_action(user_id, action):
         users[str(user_id)] = {"balance": 0, "actions": []}
     users[str(user_id)]["actions"].append(action)
     save_users(users)
-    @bot.message_handler(commands=['start'])
 @bot.message_handler(commands=['start'])
 def start(message):
     user_id = message.chat.id
