@@ -171,12 +171,12 @@ def create_bot(message):
     markup.add(KeyboardButton("🔙 Назад"))
 
     bot.send_message(user_id, "Выберите тип бота:", reply_markup=markup)
-    @bot.message_handler(func=lambda message: message.text in [
+    
+@bot.message_handler(func=lambda message: message.text in [
     "📢 Информационный бот", "🛒 Бот-магазин", "🎫 Бот для билетов",
     "💰 Донат-бот", "📩 Бот-рассыльщик", "⚙️ Поддержка клиентов",
     "🔄 Обменный бот", "📊 Бот-аналитик", "🎮 Игровой бот"
 ])
-    
 def ask_bot_name(message):
     user_id = message.chat.id
     bot_type = message.text
