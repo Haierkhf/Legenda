@@ -1,13 +1,13 @@
 import os
 import json
 import telebot
-from telebot import types
-from dotenv import load_dotenv
 import requests
 import subprocess
 import time
 import logging
 import shutil
+from telebot import types
+from dotenv import load_dotenv
 
 # Загрузка переменных окружения
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -274,7 +274,6 @@ bot.polling(none_stop=True)
     # Отправка пользователю файла с кодом и ссылки на бота
     bot.send_document(user_id, open(filename, "rb"))
     bot.send_message(user_id, f"✅ Ваш бот создан и запущен! \n🔗 Ссылка: t.me/{bot_data['name']}")
-    import time
 
 def monitor_bots():
     while True:
