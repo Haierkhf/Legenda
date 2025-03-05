@@ -186,7 +186,8 @@ def ask_bot_name(message):
     save_users(users)
 
     bot.send_message(user_id, "Введите название вашего бота:")
-@bot.register_next_step_handler(message, ask_bot_tokens)
+    bot.register_next_step_handler(message, ask_bot_tokens)
+    
     def ask_bot_tokens(message):
     user_id = message.chat.id
     bot_name = message.text
@@ -198,7 +199,7 @@ def ask_bot_name(message):
     bot_type = users[str(user_id)]["selected_bot"]["type"]
 
     bot.send_message(user_id, "Отправьте BOT_TOKEN (получите в @BotFather):")
-    bot.register_next_step_handler(message, lambda msg: save_bot_token(msg, "bot_token"))
+    bot.register_next_step_handler(message, lambda msg: save_bot_token(msg))
 
 def save_bot_token(message, key):
     user_id = message.chat.id
