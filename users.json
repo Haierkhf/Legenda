@@ -1,15 +1,18 @@
 {
     "7639092817": {
-        "balance": 100,
-        "username": "user_1"
+        "balance": 100.0,
+        "username": "user_1",
+        "actions": []
     },
     "6402443549": {
-        "balance": 0,
+        "balance": 0.0,
         "username": "user_2",
-        "registration_date": "2025-03-02"
+        "registration_date": "2025-03-02",
+        "actions": []
     },
     "6720347373": {
-        "balance": 100,
-        "username": "sss_wwwv"
+        "balance": 100.0,
+        "username": "sss_wwww",
+        "actions": []
     }
 }
