@@ -1,15 +1,16 @@
 import os
 import json
 import telebot
-import requests
-import subprocess
-import time
-import logging
-import shutil
 from telebot import types
 from dotenv import load_dotenv
+import requests
+import subprocess
+import time  # Добавлен import time
+import logging
+import shutil
 
-# Загрузка переменных окружения
+load_dotenv()
+
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CRYPTOBOT_TOKEN = os.getenv("CRYPTOBOT_TOKEN")
 ADMIN_ID = os.getenv("ADMIN_ID")
@@ -34,12 +35,14 @@ def save_users(users):
 
 # Функция логирования действий
 def log_action(user_id, action):
+    users = load_users()  # Загружаем пользователей
     user_id_str = str(user_id)  # Преобразуем ID в строку
-if user_id_str not in users:
-    users[user_id_str] = {"balance": 0, "actions": []}  # Создаем, если нет
 
-users[user_id_str]["actions"].append(action)  # Теперь можно добавлять действие
-    save_users(users)
+    if user_id_str not in users:
+        users[user_id_str] = {"balance": 0, "actions": []}  # Создаем запись
+
+    users[user_id_str]["actions"].append(action)  # Добавляем действие
+    save_users(users)  # Сохраняем изменения
 
 @bot.message_handler(commands=['start'])
 def start(message):
