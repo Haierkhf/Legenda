@@ -55,15 +55,12 @@ def main_menu():
     return markup
 
 
-# Обработчик команды /start
-@bot.message_handler(commands=["start"])
-def start_handler(message):
-    user_id = message.chat.id
-    check_user(user_id)
+@bot.message_handler(commands=['start'])
+def start(message):
     bot.send_message(
-        user_id,
-        "👋 Привет! Выберите действие:",
-        reply_markup=main_menu(),
+        message.chat.id, 
+        "👋 Привет! Выберите действие:", 
+        reply_markup=main_menu()
     )
 
 
