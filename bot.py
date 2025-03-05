@@ -1,7 +1,13 @@
-import telebot
-import json
 import os
-from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+import json
+import telebot
+from telebot import types
+from dotenv import load_dotenv
+import requests
+import subprocess
+import time
+import logging
+import shutil
 
 # Загрузка переменных окружения
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -305,3 +311,5 @@ def update_bot(user_id):
         bot.send_message(user_id, "✅ Ваш бот был успешно обновлен!")
     else:
         bot.send_message(user_id, "❌ Ошибка: Бот не найден.")
+if __name__ == "__main__":
+    bot.polling(none_stop=True)
