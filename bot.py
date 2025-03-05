@@ -154,7 +154,7 @@ def profile_menu():
     return kb
 
 # Обработчик команды /start
-@dp.message_handler(commands=['start'])
+@bot.message_handler(commands=['запустить'])
 async def start_handler(message: types.Message):
     user_id = str(message.from_user.id)
     args = message.get_args()
