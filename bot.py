@@ -307,7 +307,7 @@ def update_bot(user_id):
         bot.send_message(user_id, "❌ Ошибка: Бот не найден.")
         
 @bot.message_handler(commands=['restart_all'])
-def restart_all_bots(message):
+    def restart_all_bots(message):
     if str(message.chat.id) == ADMIN_ID:
         bot.send_message(message.chat.id, "🔄 Перезапускаем все боты...")
         for file in os.listdir():
