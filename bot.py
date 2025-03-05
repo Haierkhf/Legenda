@@ -39,7 +39,7 @@ def log_action(user_id, action):
     user_id_str = str(user_id)  # Преобразуем ID в строку
 
     if user_id_str not in users:
-    users[user_id_str] = {"balance": 0, "actions": []}  # Создаем запись
+        users[user_id_str] = {"balance": 0, "actions": []}  # Создаем запись
 
     users[user_id_str]["actions"].append(action)  # Добавляем действие
     save_users(users)  # Сохраняем изменения
