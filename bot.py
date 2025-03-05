@@ -34,10 +34,11 @@ def save_users(users):
 
 # Функция логирования действий
 def log_action(user_id, action):
-    users = load_users()
-    if str(user_id) not in users:
-        users[str(user_id)] = {"balance": 0, "actions": []}
-    users[str(user_id)]["actions"].append(action)
+    user_id_str = str(user_id)  # Преобразуем ID в строку
+if user_id_str not in users:
+    users[user_id_str] = {"balance": 0, "actions": []}  # Создаем, если нет
+
+users[user_id_str]["actions"].append(action)  # Теперь можно добавлять действие
     save_users(users)
 @bot.message_handler(commands=['start'])
 def start(message):
