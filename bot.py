@@ -188,7 +188,7 @@ def ask_bot_name(message):
     bot.send_message(user_id, "Введите название вашего бота:")
     bot.register_next_step_handler(message, ask_bot_tokens)
     
-    def ask_bot_tokens(message):
+def ask_bot_tokens(message):
     user_id = message.chat.id
     bot_name = message.text
 
