@@ -319,16 +319,40 @@ bot.polling(none_stop=True)
 def auto_restart_bots():
     while True:
         try:
+            # Загрузка данных о ботах из файла, если user_bot_data не является глобальной переменной
+            with open("users.json", "r") as file:
+                user_bot_data = json.load(file)
+
             for user_id, bot_data in user_bot_data.items():
                 bot_filename = f"user_bot_{user_id}.py"
-                result = subprocess.run(["pgrep", "-f", bot_filename], capture_output=True, text=True)
-                if not result.stdout:
-                    bot.send_message(user_id, f"⚠️ Ваш бот {bot_data['name']} упал. Перезапускаем...")
+
+                # Проверяем, запущен ли бот
+                result = subprocess.run(["pgrep", "-af", "python"], capture_output=True, text=True)
+
+                if bot_filename not in result.stdout:
+                    logging.warning(f"⚠️ Бот {bot_data['name']} ({user_id}) не запущен. Перезапускаем...")
+
+                    # Перезапуск бота через Supervisor
                     subprocess.run(["supervisorctl", "restart", f"user_bot_{user_id}"])
-            time.sleep(60)
+
+            time.sleep(60)  # Проверяем ботов каждую минуту
+
         except Exception as e:
-            logging.error(f"Ошибка в auto_restart_bots: {e}")
+            logging.error(f"Ошибка в auto_restart_bots: {traceback.format_exc()}")
 
 # Запуск потока для отслеживания ботов
 restart_thread = threading.Thread(target=auto_restart_bots, daemon=True)
 restart_thread.start()
+def main():
+    # Запуск основного бота в отдельном потоке
+    bot_thread = threading.Thread(target=start_bot, daemon=True)
+    bot_thread.start()
+
+    # Запуск функции авто-ребута ботов
+    restart_thread = threading.Thread(target=auto_restart_bots, daemon=True)
+    restart_thread.start()
+
+    bot_thread.join()  # Ожидание завершения основного бота
+
+if __name__ == "__main__":
+    main()
