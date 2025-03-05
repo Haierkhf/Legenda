@@ -210,8 +210,8 @@ def save_bot_token(message, key):
     else:
         bot.send_message(user_id, "Отправьте ваш ADMIN_ID (узнать в @userinfobot):")
         bot.register_next_step_handler(message, lambda msg: save_bot_token(msg, "admin_id"))
-        def check_balance_before_payment(message):
-            
+        
+def check_balance_before_payment(message):
     user_id = message.chat.id
     users = load_users()
     balance = users[str(user_id)]["balance"]
