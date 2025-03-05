@@ -15,6 +15,10 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 CRYPTOBOT_TOKEN = os.getenv("CRYPTOBOT_TOKEN")
 ADMIN_ID = os.getenv("ADMIN_ID")
 
+print("BOT_TOKEN:", BOT_TOKEN)
+print("CRYPTOBOT_TOKEN:", CRYPTOBOT_TOKEN)
+print("ADMIN_ID:", ADMIN_ID)
+
 bot = telebot.TeleBot(BOT_TOKEN)
 
 # Файл для хранения данных пользователей
