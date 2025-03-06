@@ -129,7 +129,7 @@ def process_withdraw(message):
         bot.send_message(user_id, "❌ Введите корректное число.")
         
 @bot.message_handler(func=lambda message: message.text == "ℹ️ Информация")
-def info(message):
+def info_handler(message):
     text = ("ℹ️ В этом разделе вы найдете все ответы на ваши вопросы:\n\n"
             "🔹 *Профиль* - здесь можно пополнить баланс, вывести деньги, "
             "посмотреть статистику и получить реферальную ссылку.\n"
@@ -141,11 +141,11 @@ def info(message):
             "🔹 *Что такое реферальная система?* - пригласите друзей, "
             "и получайте 15% с их пополнений на ваш баланс!\n\n"
             "🔹 *Какие токены нужны?*:\n"
-            "   - BOT_TOKEN (получается в @BotFather) – для работы бота.\n"
-            "   - CRYPTOBOT_TOKEN (в @CryptoBot) – для платежей.\n"
-            "   - ADMIN_ID (узнать в @userinfobot) – ID владельца бота.")
+            "   - *BOT_TOKEN* (получается в @BotFather) – для работы бота.\n"
+            "   - *CRYPTOBOT_TOKEN* (в @CryptoBot) – для платежей.\n"
+            "   - *ADMIN_ID* (узнать в @userinfobot) – ID владельца бота.")
 
-    bot.send_message(message.chat.id, text, parse_mode="Markdown")
+    bot.send_message(message.chat.id, text, parse_mode="Markdown", reply_markup=main_menu())
     
 @bot.message_handler(func=lambda message: message.text == "⭐ Отзывы")
 def reviews(message):
