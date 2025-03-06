@@ -295,11 +295,9 @@ bot.polling()
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.send_message(message.chat.id, "Привет! Это {bot_data['name']}.")
-
-bot.polling(none_stop=True)
-
+    user_id = message.chat.id  # Убеждаемся, что user_id определён
     filename = f"bot_{user_id}.py"
+    
     with open(filename, "w") as f:
         f.write(bot_code)
 
