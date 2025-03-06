@@ -9,6 +9,7 @@ import subprocess
 import time  # Добавлен import time
 import logging
 import shutil
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
 load_dotenv()
 
