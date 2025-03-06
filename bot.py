@@ -348,4 +348,4 @@ def update_bot(user_id):
     else:
         bot.send_message(user_id, "❌ Ошибка: Бот не найден.")
 if __name__ == "__main__":
-    bot.polling(none_stop=True)
+    bot.infinity_polling(skip_pending=True)
