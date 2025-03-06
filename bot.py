@@ -298,7 +298,6 @@ def start(message):
     bot.send_message(message.chat.id, "Привет! Это {bot_data['name']}.")
 
 bot.polling(none_stop=True)
-"""
 
     filename = f"bot_{user_id}.py"
     with open(filename, "w") as f:
