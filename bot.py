@@ -3,6 +3,7 @@ import json
 import telebot
 from telebot import types
 from dotenv import load_dotenv
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 import requests
 import subprocess
 import time  # Добавлен import time
