@@ -151,30 +151,31 @@ def info_handler(message):
 def reviews(message):
     bot.send_message(message.chat.id, "⭐ Посмотреть отзывы: [Отзывы](https://t.me/nWf0L9BBCoJlY2Qy)", parse_mode="Markdown")
     # Обработчик кнопки "🤖 Создать бота"
-@bot.message_handler(func=lambda message: message.text == "🤖 Создать бота")
-def create_bot_handler(message):
-    markup = InlineKeyboardMarkup()
-    bot_types = [
-        "🛍 Магазин-бот", "💰 Крипто-бот", "📢 Инфо-бот", 
-        "🤝 Реферальный бот", "📊 Статистика-бот", "🎫 Бот для билетов", 
-        "📝 Форма-бот", "🎮 Игровой бот", "🔐 Авторизационный бот"
-    ]
-    
-    for bot_type in bot_types:
-        markup.add(InlineKeyboardButton(bot_type, callback_data=f"select_{bot_type}"))
-    
-    markup.add(InlineKeyboardButton("🔙 Назад", callback_data="back_main"))
+import json
+import telebot
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
-    bot.send_message(
-        message.chat.id,
-        "Выберите тип бота, которого хотите создать 👇",
-        reply_markup=markup
-    )
-    
+bot = telebot.TeleBot("ВАШ_BOT_TOKEN")
+BOT_PRICE = 29.99
+
+def load_users():
+    try:
+        with open("users.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+def save_users(users):
+    with open("users.json", "w", encoding="utf-8") as f:
+        json.dump(users, f, indent=4, ensure_ascii=False)
+
 @bot.message_handler(func=lambda message: message.text == "🤖 Создать бота")
 def create_bot(message):
-    user_id = message.chat.id
-    log_action(user_id, "открыл меню создания бота")
+    user_id = str(message.chat.id)
+    users = load_users()
+    if user_id not in users:
+        users[user_id] = {"balance": 0, "actions": [], "selected_bot": {}}
+    save_users(users)
 
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     bot_types = [
@@ -187,75 +188,86 @@ def create_bot(message):
     markup.add(KeyboardButton("🔙 Назад"))
 
     bot.send_message(user_id, "Выберите тип бота:", reply_markup=markup)
-    
+
 @bot.message_handler(func=lambda message: message.text in [
     "📢 Информационный бот", "🛒 Бот-магазин", "🎫 Бот для билетов",
     "💰 Донат-бот", "📩 Бот-рассыльщик", "⚙️ Поддержка клиентов",
     "🔄 Обменный бот", "📊 Бот-аналитик", "🎮 Игровой бот"
 ])
 def ask_bot_name(message):
-    user_id = message.chat.id
+    user_id = str(message.chat.id)
     bot_type = message.text
 
     users = load_users()
-    users[str(user_id)]["selected_bot"] = {"type": bot_type}
+    users[user_id]["selected_bot"]["type"] = bot_type
     save_users(users)
 
     bot.send_message(user_id, "Введите название вашего бота:")
-    bot.register_next_step_handler(message, ask_bot_tokens)
-    
-def ask_bot_tokens(message):
-    user_id = message.chat.id
+    bot.register_next_step_handler(message, ask_bot_token)
+
+def ask_bot_token(message):
+    user_id = str(message.chat.id)
     bot_name = message.text
+
     users = load_users()
-    users[str(user_id)]["selected_bot"]["name"] = bot_name
+    users[user_id]["selected_bot"]["name"] = bot_name
     save_users(users)
-    bot_type = users[str(user_id)]["selected_bot"]["type"]
+
     bot.send_message(user_id, "Отправьте BOT_TOKEN (получите в @BotFather):")
-    bot.register_next_step_handler(message, lambda msg: save_bot_token(msg))
+    bot.register_next_step_handler(message, save_bot_token, "bot_token")
 
 def save_bot_token(message, key):
-    user_id = message.chat.id
+    user_id = str(message.chat.id)
     users = load_users()
-    users[str(user_id)]["selected_bot"][key] = message.text
+    users[user_id]["selected_bot"][key] = message.text
     save_users(users)
 
-    if users[str(user_id)]["selected_bot"]["type"] != "📢 Информационный бот":
+    if users[user_id]["selected_bot"]["type"] != "📢 Информационный бот":
         bot.send_message(user_id, "Отправьте CRYPTOBOT_TOKEN (получите в @CryptoBot):")
-        bot.register_next_step_handler(message, lambda msg: save_bot_token(msg, "crypto_token"))
+        bot.register_next_step_handler(message, save_bot_token, "crypto_token")
     else:
         bot.send_message(user_id, "Отправьте ваш ADMIN_ID (узнать в @userinfobot):")
-        bot.register_next_step_handler(message, lambda msg: save_bot_token(msg, "admin_id"))
-        
+        bot.register_next_step_handler(message, save_bot_token, "admin_id")
+
+@bot.message_handler(func=lambda message: message.text == "💵 Проверить баланс")
 def check_balance_before_payment(message):
-    user_id = message.chat.id
+    user_id = str(message.chat.id)
     users = load_users()
-    balance = users[str(user_id)]["balance"]
-    price = 29.99
-    if balance < price:
-        payment_link = f"https://t.me/CryptoBot?start=pay_{price}"
+    balance = users[user_id]["balance"]
+
+    if balance < BOT_PRICE:
+        payment_link = f"https://t.me/CryptoBot?start=pay_{BOT_PRICE}"
         markup = InlineKeyboardMarkup()
         markup.add(InlineKeyboardButton("💳 Оплатить", url=payment_link))
         markup.add(InlineKeyboardButton("🔙 Назад", callback_data="back_main"))
-        bot.send_message(user_id, f"❌ Недостаточно средств. Вам нужно {price}$. Пополните баланс:", reply_markup=markup)
+
+        bot.send_message(
+            user_id,
+            f"❌ Недостаточно средств. Вам нужно {BOT_PRICE}$. Пополните баланс:",
+            reply_markup=markup
+        )
     else:
         markup = InlineKeyboardMarkup()
         markup.add(InlineKeyboardButton("✅ Подтвердить", callback_data="confirm_payment"))
         markup.add(InlineKeyboardButton("❌ Отменить", callback_data="back_main"))
-        bot.send_message(user_id, f"💵 С вашего баланса будет списано {price}$. Подтвердите оплату:", reply_markup=markup)
-        
+
+        bot.send_message(
+            user_id,
+            f"💵 С вашего баланса будет списано {BOT_PRICE}$. Подтвердите оплату:",
+            reply_markup=markup
+        )
+
 @bot.callback_query_handler(func=lambda call: call.data == "confirm_payment")
 def process_payment(call):
-    user_id = call.message.chat.id
+    user_id = str(call.message.chat.id)
     users = load_users()
-    
-    price = 29.99
-    users[str(user_id)]["balance"] -= price
+
+    users[user_id]["balance"] -= BOT_PRICE
+    users[user_id]["actions"].append(f"Оплатил {BOT_PRICE}$ за создание бота")
     save_users(users)
 
     bot.send_message(user_id, "✅ Оплата успешна! Начинаю создание бота...")
     create_and_deploy_bot(user_id)
-    import subprocess
 
 def create_and_deploy_bot(user_id):
     users = load_users()
@@ -263,8 +275,23 @@ def create_and_deploy_bot(user_id):
 
     bot_code = f"""
 import telebot
+
 BOT_TOKEN = "{bot_data['bot_token']}"
 bot = telebot.TeleBot(BOT_TOKEN)
+
+@bot.message_handler(commands=["start"])
+def start(message):
+    bot.send_message(message.chat.id, "Привет! Я {bot_data['name']}.")
+
+bot.polling()
+"""
+
+    with open(f"{bot_data['name']}.py", "w", encoding="utf-8") as f:
+        f.write(bot_code)
+
+    bot.send_message(user_id, f"✅ Ваш бот *{bot_data['name']}* создан и сохранен!")
+    
+bot.polling()
 
 @bot.message_handler(commands=['start'])
 def start(message):
